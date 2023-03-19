@@ -21,4 +21,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn compile jib:build -Dimage=ghostwritertje/nuclearr
+      run: mvn compile jib:build -Dimage=ghostwritertje/nuclearr \
+        -Djib.to.auth.username=${{ DOCKER_USERNAME }} \
+        -Djib.to.auth.password=${{ DOCKER_USERNAME }}
+      shell: bash
