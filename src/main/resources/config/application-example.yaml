@@ -1,0 +1,9 @@
+nuclearr:
+  transmission:
+    url: http://transmission:9091
+    user: admin
+    password: admin
+  trackers:
+    - digitalcore.club
+    - cow.milkie.cc
+    - tracker.scenetime.com
