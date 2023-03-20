@@ -1,19 +1,17 @@
 package be.ghostwritertje.nuclearr.service;
 
 import be.ghostwritertje.nuclearr.config.NuclearrConfiguration;
-import be.ghostwritertje.nuclearr.domain.Removed;
+import be.ghostwritertje.nuclearr.removed.Removed;
 import be.ghostwritertje.nuclearr.presentation.TorrentSupportDto;
 import be.ghostwritertje.nuclearr.presentation.TrackerDto;
-import be.ghostwritertje.nuclearr.repo.RemovedRepository;
+import be.ghostwritertje.nuclearr.removed.RemovedService;
 import be.ghostwritertje.nuclearr.transmission.TransmissionAdapter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -22,18 +20,17 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TorrentRemovalService {
 
-    private final RemovedRepository removedRepository;
+    private final RemovedService removedService;
     private final TransmissionAdapter transmissionAdapter;
-
     public final Set<String> trackers;
     private final RepresentationService representationService;
 
     public TorrentRemovalService(
-            RemovedRepository removedRepository,
+            RemovedService removedService,
             TransmissionAdapter transmissionAdapter,
             RepresentationService representationService,
             NuclearrConfiguration nuclearrConfiguration) {
-        this.removedRepository = removedRepository;
+        this.removedService = removedService;
         this.transmissionAdapter = transmissionAdapter;
         this.trackers = new HashSet<>(nuclearrConfiguration.getTrackers());
         this.representationService = representationService;
@@ -53,9 +50,9 @@ public class TorrentRemovalService {
     }
 
     private Mono<Removed> removeTorrent(TorrentSupportDto masterTorrentDto) {
-        return removedRepository.findRemovedByTransmissionId(masterTorrentDto.getTransmissionId()) //todo: should work with hash maybe
+        return removedService.findRemovedByTransmissionId(masterTorrentDto.getTransmissionId()) //todo: should work with hash maybe
                 .switchIfEmpty(
-                        removedRepository.save(Removed.builder()
+                        removedService.save(Removed.builder()
                                         .name(masterTorrentDto.getName())
                                         .seedTime(masterTorrentDto.getSeedTime())
                                         .hardlinks(masterTorrentDto.getId())

@@ -1,6 +1,5 @@
 package be.ghostwritertje.nuclearr.controller;
 
-import be.ghostwritertje.nuclearr.domain.Torrent;
 import be.ghostwritertje.nuclearr.presentation.MasterTorrentDto;
 import be.ghostwritertje.nuclearr.service.RepresentationService;
 import lombok.RequiredArgsConstructor;

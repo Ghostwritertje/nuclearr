@@ -1,13 +1,13 @@
 package be.ghostwritertje.nuclearr.service;
 
-import be.ghostwritertje.nuclearr.domain.FileItem;
-import be.ghostwritertje.nuclearr.domain.FileItemOccurrence;
-import be.ghostwritertje.nuclearr.domain.Torrent;
-import be.ghostwritertje.nuclearr.domain.Tracker;
-import be.ghostwritertje.nuclearr.repo.FileItemOccurrenceRepository;
-import be.ghostwritertje.nuclearr.repo.FileItemRepository;
-import be.ghostwritertje.nuclearr.repo.TorrentRepository;
-import be.ghostwritertje.nuclearr.repo.TrackerRepository;
+import be.ghostwritertje.nuclearr.fileitem.FileItem;
+import be.ghostwritertje.nuclearr.fileitemoccurrence.FileItemOccurrence;
+import be.ghostwritertje.nuclearr.torrent.Torrent;
+import be.ghostwritertje.nuclearr.tracker.Tracker;
+import be.ghostwritertje.nuclearr.fileitemoccurrence.FileItemOccurrenceService;
+import be.ghostwritertje.nuclearr.fileitem.FileItemService;
+import be.ghostwritertje.nuclearr.torrent.TorrentService;
+import be.ghostwritertje.nuclearr.tracker.TrackerService;
 import be.ghostwritertje.nuclearr.transmission.TransmissionAdapter;
 import be.ghostwritertje.nuclearr.transmission.TransmissionTorrent;
 import lombok.RequiredArgsConstructor;
@@ -16,18 +16,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,43 +31,41 @@ import java.util.stream.Collectors;
 public class TorrentImporterService {
 
     public static final Pattern TRACKER_PATTERN = Pattern.compile("\\/\\/(\\w+\\.\\w+\\.*\\w*)(\\:\\d+)*\\/");
-    private final TorrentRepository torrentRepository;
-    private final FileItemRepository fileItemRepository;
+    private final TorrentService torrentService;
     private final FileItemService fileItemService;
-    private final FileItemOccurrenceRepository fileItemOccurrenceRepository;
+    private final FileItemOccurrenceService fileItemOccurrenceService;
 
-    private final TrackerRepository trackerRepository;
+    private final TrackerService trackerService;
 
 
     private final TransmissionAdapter transmissionAdapter;
 
     public Flux<Torrent> importAllTorrents() {
         return transmissionAdapter.retrieveAllTorrents()
-                .flatMapMany(list -> Flux.fromStream(list.stream())
-                        .map(t -> Torrent.builder()
-                                .name(t.getName())
-                                .hash(t.getHashString())
-                                .transmissionId(t.getId())
-                                .seedTime(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - t.getAddedDate())
-                                .build())
-                        .buffer(200)
-                        .map(torrentRepository::saveAll)
-                        .flatMap(Flux::concat)
+                .flatMapMany(list -> {
+                            Flux<Torrent> torrentsToSave = Flux.fromStream(list.stream())
+                                    .map(t -> Torrent.builder()
+                                            .name(t.getName())
+                                            .hash(t.getHashString())
+                                            .transmissionId(t.getId())
+                                            .seedTime(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - t.getAddedDate())
+                                            .build());
+                            return torrentService.saveAll(torrentsToSave);
+                        }
                 );
     }
 
     public Flux<FileItemOccurrence> importFileItems() {
-        return this.importAllTorrents()
+        Flux<FileItemOccurrence> fileItemOccurrenceFlux = this.importAllTorrents()
                 .flatMap(torrent -> {
                     Mono<TransmissionTorrent> details = transmissionAdapter.getDetails(torrent.getTransmissionId());
 
-                    Flux<Tracker> trackerFlux = details.flatMapMany(TorrentImporterService::extractTrackerList)
+                    Flux<Tracker> trackersToSave = details.flatMapMany(TorrentImporterService::extractTrackerList)
                             .map(trackerString -> Tracker.builder()
                                     .torrentId(torrent.getId())
                                     .name(trackerString)
-                                    .build())
-                            .map(trackerRepository::save)
-                            .flatMap(Flux::concat);
+                                    .build());
+                    Flux<Tracker> trackerFlux = trackerService.saveAll(trackersToSave);
                     return trackerFlux.then(details.map(t -> Tuples.of(torrent.getId(), t)));
                 })
                 .flatMap(tuple2 -> Flux.fromStream(tuple2.getT2().getFiles().stream()
@@ -83,10 +77,9 @@ public class TorrentImporterService {
                         .map(fileItem -> FileItemOccurrence.builder()
                                 .fileItemId(fileItem.getId())
                                 .torrentId(tuple2.getT1())
-                                .build()))
-                .buffer(200)
-                .map(fileItemOccurrenceRepository::saveAll)
-                .flatMap(Flux::concat);
+                                .build()));
+
+        return this.fileItemOccurrenceService.saveAll(fileItemOccurrenceFlux);
     }
 
     private static Flux<String> extractTrackerList(TransmissionTorrent transmissionTorrent) {
@@ -104,8 +97,8 @@ public class TorrentImporterService {
     }
 
     public Mono<Void> deleteAll() {
-        return this.trackerRepository.deleteAll().then(this.fileItemOccurrenceRepository.deleteAll())
-                .then(this.fileItemRepository.deleteAll())
-                .then(this.torrentRepository.deleteAll());
+        return this.trackerService.deleteAll().then(this.fileItemOccurrenceService.deleteAll())
+                .then(this.fileItemService.deleteAll())
+                .then(this.torrentService.deleteAll());
     }
 }

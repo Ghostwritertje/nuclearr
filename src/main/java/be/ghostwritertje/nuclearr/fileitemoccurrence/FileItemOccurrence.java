@@ -1,4 +1,4 @@
-package be.ghostwritertje.nuclearr.domain;
+package be.ghostwritertje.nuclearr.fileitemoccurrence;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,18 +9,18 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "tracker")
-public class Tracker {
+@Table(name = "file_item_occurrence")
+@Builder
+public class FileItemOccurrence {
 
     @Id
     @Column("id")
     Integer id;
 
-    @Column("name")
-    String name;
+    @Column("file_item_id")
+    Integer fileItemId;
 
     @Column("torrent_id")
     Integer torrentId;
