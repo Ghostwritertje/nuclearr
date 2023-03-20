@@ -8,5 +8,4 @@ import java.util.List;
 interface FileItemOccurrenceRepository extends ReactiveCrudRepository<FileItemOccurrence, Integer> {
 
     Flux<FileItemOccurrence> findFileItemOccurrencesByTorrentId(Integer torrentId);
-    Flux<FileItemOccurrence> findFileItemOccurrencesByFileItemIdInAndTorrentIdIsNot(List<Integer> fileItemIds, Integer torrentId);
 }

@@ -75,7 +75,7 @@ public class TorrentImporterService {
                         .map(fileItemService::mergeFileItem)
                         .flatMap(Flux::concat)
                         .map(fileItem -> FileItemOccurrence.builder()
-                                .fileItemId(fileItem.getId())
+//                                .fileItemId(fileItem.getId())
                                 .torrentId(tuple2.getT1())
                                 .build()));
 
@@ -97,8 +97,6 @@ public class TorrentImporterService {
     }
 
     public Mono<Void> deleteAll() {
-        return this.trackerService.deleteAll().then(this.fileItemOccurrenceService.deleteAll())
-                .then(this.fileItemService.deleteAll())
-                .then(this.torrentService.deleteAll());
+        return this.trackerService.deleteAll();
     }
 }

@@ -21,7 +21,6 @@ public class NuclearrConfiguration {
 
     private boolean hardlinksEnabled;
 
-
     @Data
     private static class TransmissionConfiguration {
         private String url;

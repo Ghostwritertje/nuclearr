@@ -27,41 +27,42 @@ public class RepresentationService {
     private final TrackerService trackerService;
 
     public Flux<MasterTorrentDto> represent() {
-        return this.torrentService.findAll()
-                .flatMap(torrent -> {
-                    Flux<FileItemOccurrence> fileItemOccurrencesByTorrentId = fileItemOccurrenceService.findFileItemOccurrencesByTorrentId(torrent.getId());
-
-
-                    Flux<FileItemOccurrence> childFileItems = fileItemOccurrencesByTorrentId
-                            .map(FileItemOccurrence::getFileItemId)
-                            .collectList()
-                            .map(fileIds -> this.fileItemOccurrenceService.findFileItemOccurrencesByFileItemIdInAndTorrentIdIsNot(fileIds, torrent.getId()))
-                            .flatMapMany(Flux::concat);
-                    Flux<Torrent> childTorrentFlux = childFileItems
-                            .map(FileItemOccurrence::getTorrentId)
-                            .flatMap(torrentService::getTorrentById);
-                    Mono<List<ChildTorrentDto>> masterFlux = Flux.zip(childTorrentFlux, getFiles(childFileItems), getTrackers(childTorrentFlux))
-                            .map(tuple2 -> (ChildTorrentDto) ChildTorrentDto.builder()
-                                    .id(tuple2.getT1().getId())
-                                    .name(tuple2.getT1().getName())
-                                    .seedTime(tuple2.getT1().getSeedTime())
-                                    .transmissionId(tuple2.getT1().getTransmissionId())
-                                    .files(tuple2.getT2())
-                                    .trackerList(tuple2.getT3())
-                                    .build())
-                            .collectList();
-                    return Flux.zip(masterFlux, getFiles(fileItemOccurrencesByTorrentId), getTrackerList(torrent))
-                            .map(tuple2 -> MasterTorrentDto.builder()
-                                    .id(torrent.getId())
-                                    .name(torrent.getName())
-                                    .transmissionId(torrent.getTransmissionId())
-                                    .seedTime(torrent.getSeedTime())
-                                    .childTorrentDtos(tuple2.getT1())
-                                    .files(tuple2.getT2())
-                                    .trackerList(tuple2.getT3())
-                                    .build()
-                            );
-                });
+        return Flux.empty();
+//        return this.torrentService.findAll()
+//                .flatMap(torrent -> {
+//                    Flux<FileItemOccurrence> fileItemOccurrencesByTorrentId = fileItemOccurrenceService.findFileItemOccurrencesByTorrentId(torrent.getId());
+//
+//
+//                    Flux<FileItemOccurrence> childFileItems = fileItemOccurrencesByTorrentId
+//                            .map(FileItemOccurrence::getFileItemId)
+//                            .collectList()
+//                            .map(fileIds -> this.fileItemOccurrenceService.findFileItemOccurrencesByFileItemIdInAndTorrentIdIsNot(fileIds, torrent.getId()))
+//                            .flatMapMany(Flux::concat);
+//                    Flux<Torrent> childTorrentFlux = childFileItems
+//                            .map(FileItemOccurrence::getTorrentId)
+//                            .flatMap(torrentService::getTorrentById);
+//                    Mono<List<ChildTorrentDto>> masterFlux = Flux.zip(childTorrentFlux, getFiles(childFileItems), getTrackers(childTorrentFlux))
+//                            .map(tuple2 -> (ChildTorrentDto) ChildTorrentDto.builder()
+//                                    .id(tuple2.getT1().getId())
+//                                    .name(tuple2.getT1().getName())
+//                                    .seedTime(tuple2.getT1().getSeedTime())
+//                                    .transmissionId(tuple2.getT1().getTransmissionId())
+//                                    .files(tuple2.getT2())
+//                                    .trackerList(tuple2.getT3())
+//                                    .build())
+//                            .collectList();
+//                    return Flux.zip(masterFlux, getFiles(fileItemOccurrencesByTorrentId), getTrackerList(torrent))
+//                            .map(tuple2 -> MasterTorrentDto.builder()
+//                                    .id(torrent.getId())
+//                                    .name(torrent.getName())
+//                                    .transmissionId(torrent.getTransmissionId())
+//                                    .seedTime(torrent.getSeedTime())
+//                                    .childTorrentDtos(tuple2.getT1())
+//                                    .files(tuple2.getT2())
+//                                    .trackerList(tuple2.getT3())
+//                                    .build()
+//                            );
+//                });
 
     }
 
@@ -81,12 +82,6 @@ public class RepresentationService {
                 .collectList();
     }
     private Mono<List<FileDto>> getFiles(Flux<FileItemOccurrence> fileItemOccurrencesByTorrentId) {
-        return fileItemOccurrencesByTorrentId.flatMap(fio -> this.fileItemService.findById(fio.getFileItemId()))
-                .map(fileItem -> FileDto.builder()
-                        .id(fileItem.getId())
-                        .hardlinks(fileItem.getHardlinks())
-                        .path(fileItem.getPath())
-                        .build())
-                .collectList();
+        return Mono.just(List.of());
     }
 }

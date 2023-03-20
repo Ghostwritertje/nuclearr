@@ -1,4 +1,4 @@
-package be.ghostwritertje.nuclearr.service;
+package be.ghostwritertje.nuclearr.hardlinks;
 
 import be.ghostwritertje.nuclearr.config.NuclearrConfiguration;
 import be.ghostwritertje.nuclearr.fileitem.FileItem;

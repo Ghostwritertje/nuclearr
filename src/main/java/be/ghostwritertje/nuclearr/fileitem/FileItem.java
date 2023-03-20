@@ -22,7 +22,7 @@ public class FileItem {
     @Column("id")
     Integer id;
 
-    @Column("path")
+    @Column(value = "path")
     String path;
 
     @Column("hard_links")

@@ -1,9 +1,10 @@
 package be.ghostwritertje.nuclearr.fileitem;
 
-import be.ghostwritertje.nuclearr.service.HardlinkFinder;
+import be.ghostwritertje.nuclearr.hardlinks.HardlinkFinder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -14,9 +15,6 @@ public class FileItemService {
     private final FileItemRepository repo;
     private final HardlinkFinder hardlinkFinder;
 
-    public Mono<FileItem> findById(Integer id) {
-        return this.repo.findById(id);
-    }
 
     public Mono<FileItem> findByPath(String path) {
         return this.repo.findFileItemByPath(path);
@@ -30,6 +28,10 @@ public class FileItemService {
         return this.repo.saveAll(flux);
     }
 
+    public Flux<FileItem> saveAll(Iterable<FileItem> flux) {
+        return this.repo.saveAll(flux);
+    }
+
     public Mono<Void> deleteAll() {
         return this.repo.deleteAll();
     }
@@ -37,10 +39,8 @@ public class FileItemService {
     @Deprecated
     //TODO refactor
     public Mono<FileItem> mergeFileItem(FileItem fileItem) {
-        Mono<FileItem> newItemMono = hardlinkFinder.findHardLinks(fileItem)
-                .flatMap(this::save);
-
         return this.findByPath(fileItem.getPath())
-                .switchIfEmpty(newItemMono);
+                .switchIfEmpty(Mono.defer(() -> hardlinkFinder.findHardLinks(fileItem)
+                        .flatMap(this::save)));
     }
 }
