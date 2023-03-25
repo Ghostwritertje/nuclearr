@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TorrentRemovalService {
 
-    public final Set<String> trackers;
     private final RemovedService removedService;
     private final TorrentClientAdapter torrentClientAdapter;
     private final RepresentationService representationService;
@@ -39,7 +38,10 @@ public class TorrentRemovalService {
                 .filter(masterTorrentDto -> masterTorrentDto.getSeedTime() > minimumSeedTime)
                 .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getHardlinks()))
                 .filter(masterTorrentDto -> masterTorrentDto.getHardlinks() < 2)
-                .filter(masterTorrentDto -> trackers.containsAll(Arrays.asList(masterTorrentDto.getTrackers())))
+                .filter(masterTorrentDto -> nuclearrConfiguration.getTrackers().containsAll(Arrays.asList(masterTorrentDto.getTrackers())))
+                .flatMap(this::removeTorrent)
+                .doOnEach(ignored -> log.info("Removing torrent "))
+                .map(Removed::getTransmissionId)
                 .flatMap(this::removeTorrent)
                 .then(Mono.fromRunnable(() -> log.info("Finished removing torrents")));
     }
