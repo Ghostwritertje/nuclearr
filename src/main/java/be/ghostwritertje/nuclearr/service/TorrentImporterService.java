@@ -48,9 +48,8 @@ public class TorrentImporterService {
         ConnectableFlux<Torrent> torrentFlux = internalTorrentFlux
                 .map(TorrentImporterService::mapInternalTorrent)
                 .buffer(250)
-                .map(torrentService::saveAll)
-                .doOnEach(ignored -> log.info("saved some Torrents {}", ignored.getType()))
-                .flatMap(Flux::concat)
+                .doOnEach(ignored -> log.info("saving 250 Torrents {}", ignored.getType()))
+                .flatMap(torrentService::saveAll)
                 .publish();
 
 
@@ -59,9 +58,8 @@ public class TorrentImporterService {
                 .map(s -> FileItem.builder().path(s).build())
                 .distinct(FileItem::getPath)
                 .buffer(250)
-                .map(fileItemService::saveAll)
-                .doOnEach(ignored -> log.info("saved some FileItems {}", ignored.getType()))
-                .flatMap(Flux::concat);
+                .doOnEach(ignored -> log.info("saving 250 FileItems {}", ignored.getType()))
+                .flatMap(fileItemService::saveAll);
 
         Flux<FileItemOccurrence> fileItemOccurrenceFlux = Flux.zip(internalTorrentFlux.onBackpressureBuffer(), torrentFlux.onBackpressureBuffer())
                 .map(tuple -> {
@@ -70,16 +68,14 @@ public class TorrentImporterService {
                 })
                 .flatMap(tuple2 -> Flux.fromStream(tuple2.getT1().getFiles().stream().map(file -> mapFileItemOccurrence(tuple2.getT2(), file.getName()))))
                 .buffer(250)
-                .map(fileItemOccurrenceService::saveAll)
-                .doOnEach(ignored -> log.info("saved some fileItemOccurrences {}", ignored.getType()))
-                .flatMap(Flux::concat);
+                .doOnEach(ignored -> log.info("saving 250 fileItemOccurrences {}", ignored.getType()))
+                .flatMap(fileItemOccurrenceService::saveAll);
 
         Flux<Tracker> trackerFlux = Flux.zip(internalTorrentFlux.onBackpressureBuffer(), torrentFlux.onBackpressureBuffer())
                 .flatMap(tuple -> extractTrackerList(tuple.getT1()).map(tracker -> mapTracker(tuple.getT2(), tracker)))
                 .buffer(250)
-                .map(trackerService::saveAll)
-                .doOnEach(ignored -> log.info("saved some trackers {}", ignored.getType()))
-                .flatMap(Flux::concat);
+                .doOnEach(ignored -> log.info("saving 250 trackers {}", ignored.getType()))
+                .flatMap(trackerService::saveAll);
 
         internalTorrentFlux.connect();
         torrentFlux.connect();

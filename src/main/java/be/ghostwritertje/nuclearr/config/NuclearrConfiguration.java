@@ -21,6 +21,9 @@ public class NuclearrConfiguration {
 
     private boolean hardlinksEnabled;
 
+    private Integer batchSize;
+
+
     @Data
     private static class TransmissionConfiguration {
         private String url;

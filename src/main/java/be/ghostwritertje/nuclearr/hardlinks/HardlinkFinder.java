@@ -24,9 +24,7 @@ public class HardlinkFinder {
 
     public Mono<FileItem> findHardLinks(FileItem fileItem) {
         if (!nuclearrConfiguration.isHardlinksEnabled()) {
-            return Mono.just(fileItem.toBuilder()
-                    .hardlinks(0)
-                    .build());
+            return Mono.empty();
         }
 
         return Mono.just(fileItem)

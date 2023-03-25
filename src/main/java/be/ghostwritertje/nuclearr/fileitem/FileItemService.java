@@ -43,4 +43,8 @@ public class FileItemService {
                 .switchIfEmpty(Mono.defer(() -> hardlinkFinder.findHardLinks(fileItem)
                         .flatMap(this::save)));
     }
+
+    public Flux<FileItem> findAll() {
+        return this.repo.findAll();
+    }
 }

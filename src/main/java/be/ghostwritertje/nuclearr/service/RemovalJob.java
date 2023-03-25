@@ -13,16 +13,17 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RemovalJob {
 
-//    private final TorrentRemovalService torrentRemovalService;
+    private final TorrentRemovalService torrentRemovalService;
     private final TorrentImporterService torrentImporterService;
     private final TorrentService torrentService;
 
-    @Scheduled(fixedDelay = 3600, initialDelay = 1, timeUnit = TimeUnit.SECONDS)
+//    @Scheduled(fixedDelay = 3600, initialDelay = 1, timeUnit = TimeUnit.SECONDS)
     public void scheduled() {
         log.info("deleting torrents");
 
         torrentService.deleteAll()
                 .then(torrentImporterService.importTorrents())
+                .then(torrentRemovalService.removeTorrents())
                 .subscribe(ignored -> log.debug("DELETED!"), ignored -> log.error("failed job", ignored),
                         () -> log.info("finished job"));
     }

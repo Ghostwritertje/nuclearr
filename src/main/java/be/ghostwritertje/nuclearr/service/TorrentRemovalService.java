@@ -1,6 +1,7 @@
 package be.ghostwritertje.nuclearr.service;
 
 import be.ghostwritertje.nuclearr.config.NuclearrConfiguration;
+import be.ghostwritertje.nuclearr.internaltorrent.TorrentClientAdapter;
 import be.ghostwritertje.nuclearr.removed.Removed;
 import be.ghostwritertje.nuclearr.presentation.TorrentSupportDto;
 import be.ghostwritertje.nuclearr.presentation.TrackerDto;
@@ -21,17 +22,17 @@ import java.util.stream.Collectors;
 public class TorrentRemovalService {
 
     private final RemovedService removedService;
-    private final TransmissionAdapter transmissionAdapter;
+    private final TorrentClientAdapter<?> torrentClientAdapter;
     public final Set<String> trackers;
     private final RepresentationService representationService;
 
     public TorrentRemovalService(
             RemovedService removedService,
-            TransmissionAdapter transmissionAdapter,
+            TorrentClientAdapter<?> torrentClientAdapter,
             RepresentationService representationService,
             NuclearrConfiguration nuclearrConfiguration) {
         this.removedService = removedService;
-        this.transmissionAdapter = transmissionAdapter;
+        this.torrentClientAdapter = torrentClientAdapter;
         this.trackers = new HashSet<>(nuclearrConfiguration.getTrackers());
         this.representationService = representationService;
     }
@@ -60,10 +61,10 @@ public class TorrentRemovalService {
                                         .transmissionId(masterTorrentDto.getTransmissionId())
                                         .build())
                                 .log()
-                                .flatMap(removed -> transmissionAdapter.removeTorrent(removed.getTransmissionId()).then(Mono.just(removed))));
+                                .flatMap(removed -> torrentClientAdapter.removeTorrent(removed.getTransmissionId()).then(Mono.just(removed))));
     }
 
     public Mono<Void> removeTorrent(Integer transmissionId) {
-        return transmissionAdapter.removeTorrent(transmissionId);
+        return torrentClientAdapter.removeTorrent(transmissionId);
     }
 }
