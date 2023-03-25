@@ -1,14 +1,11 @@
 package be.ghostwritertje.nuclearr.internaltorrent;
 
-import be.ghostwritertje.nuclearr.transmission.TransmissionTorrent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
+public interface TorrentClientAdapter {
 
-public interface TorrentClientAdapter<X extends InternalTorrent.InternalTorrentFile> {
-
-    Flux<InternalTorrent<X>> getTorrents();
+    Flux<InternalTorrent> getTorrents();
 
     Mono<Void> removeTorrent(Integer id);
 }

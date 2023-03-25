@@ -1,6 +1,5 @@
 package be.ghostwritertje.nuclearr.transmission;
 
-import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrent;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
@@ -9,7 +8,7 @@ import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TransmissionTorrent implements InternalTorrent<TransmissionTorrent.TransmissionFile> {
+public class TransmissionTorrent {
 
     private Integer id;
     private String downloadDir;
@@ -22,7 +21,7 @@ public class TransmissionTorrent implements InternalTorrent<TransmissionTorrent.
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class TransmissionFile implements InternalTorrentFile {
+    public static class TransmissionFile {
         private Long bytesCompleted;
         private Long length;
         private String name;

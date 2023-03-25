@@ -1,34 +1,21 @@
 package be.ghostwritertje.nuclearr.internaltorrent;
 
-import be.ghostwritertje.nuclearr.transmission.TransmissionTorrent;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 
-public interface InternalTorrent<X extends InternalTorrent.InternalTorrentFile> {
-
-    Integer getId();
-
-    String getDownloadDir();
-
-    List<X> getFiles();
-
-    String getHashString();
-
-    String getName();
+@Data
+@Builder
+public class InternalTorrent {
+    private Integer id;
+    private String downloadDir;
+    private List<InternalTorrentFile> files;
+    private String hashString;
+    private String name;
 
     //todo refactor to seedTime
-    Long getAddedDate();
+    private Long addedDate;
+    private String trackerList;
 
-    String getTrackerList();
-
-    interface InternalTorrentFile {
-
-        Long getBytesCompleted();
-
-        Long getLength();
-
-        String getName();
-    }
 }

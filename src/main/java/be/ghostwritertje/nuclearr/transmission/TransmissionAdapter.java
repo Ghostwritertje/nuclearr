@@ -17,12 +17,12 @@ import java.util.logging.Level;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class TransmissionAdapter implements TorrentClientAdapter<TransmissionTorrent.TransmissionFile> {
+public class TransmissionAdapter implements TorrentClientAdapter {
 
     public static final String TRANSMISSION_SESSION_ID_HEADER = "X-Transmission-Session-Id";
-    private String transmissionSessionId = "";
     private final WebClient transmissionClient;
-
+    private final TransmissionMapper transmissionMapper;
+    private String transmissionSessionId = "";
 
     public Mono<List<TransmissionTorrent>> retrieveAllTorrents() {
         return this.sendRequest(new TransmissionRequest())
@@ -31,14 +31,15 @@ public class TransmissionAdapter implements TorrentClientAdapter<TransmissionTor
 
 
     @Override
-    public Flux<InternalTorrent<TransmissionTorrent.TransmissionFile>> getTorrents() {
+    public Flux<InternalTorrent> getTorrents() {
         return this.retrieveAllTorrents()
                 .log("transmission", Level.FINE)
                 .flatMapMany(list -> Flux.fromStream(list.stream()))
                 .onBackpressureBuffer()
                 .buffer(200)
                 .doOnEach(ignored -> log.info("Retrieving details of 200 items from Transmission {}", ignored.getType()))
-                .flatMap(tt -> this.getDetails(tt.stream().map(TransmissionTorrent::getId).toArray(Integer[]::new)));
+                .flatMap(tt -> this.getDetails(tt.stream().map(TransmissionTorrent::getId).toArray(Integer[]::new)))
+                .map(transmissionMapper::mapInternalTorrent);
     }
 
     @Override

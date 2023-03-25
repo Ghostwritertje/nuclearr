@@ -23,9 +23,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TorrentRemovalService {
 
-    private final RemovedService removedService;
-    private final TorrentClientAdapter<?> torrentClientAdapter;
     public final Set<String> trackers;
+    private final RemovedService removedService;
+    private final TorrentClientAdapter torrentClientAdapter;
     private final RepresentationService representationService;
 
     private final NuclearrConfiguration nuclearrConfiguration;
@@ -61,7 +61,7 @@ public class TorrentRemovalService {
     }
 
     public Mono<Void> removeTorrent(Integer transmissionId) {
-        if (!nuclearrConfiguration.isHardlinksEnabled())  {
+        if (!nuclearrConfiguration.isHardlinksEnabled()) {
             return Mono.fromRunnable(() -> log.info("Not removing torrent with id {} (removing is DISABLED)", transmissionId));
         }
         return torrentClientAdapter.removeTorrent(transmissionId);
