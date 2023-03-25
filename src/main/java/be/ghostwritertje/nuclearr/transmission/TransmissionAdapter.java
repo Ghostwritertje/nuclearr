@@ -25,7 +25,7 @@ public class TransmissionAdapter implements TorrentClientAdapter {
     private final TransmissionMapper transmissionMapper;
     private String transmissionSessionId = "";
 
-    private NuclearrConfiguration nuclearrConfiguration;
+    private final NuclearrConfiguration nuclearrConfiguration;
 
     public Mono<List<TransmissionTorrent>> retrieveAllTorrents() {
         return this.sendRequest(new TransmissionRequest())
