@@ -1,4 +1,4 @@
-package be.ghostwritertje.nuclearr.repo;
+package be.ghostwritertje.nuclearr.config;
 
 import io.r2dbc.h2.H2ConnectionConfiguration;
 import io.r2dbc.h2.H2ConnectionFactory;

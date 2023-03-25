@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,5 +29,10 @@ public class NuclearrConfig {
         if (!Files.exists(propertyPath)) {
             Files.copy(resourceLoader.getResource("classpath:config/application-example.yaml").getFile().toPath(), propertyPath);
         }
+    }
+
+    @Bean
+    public StopWatch stopWatch() {
+        return new StopWatch("nuclearr");
     }
 }

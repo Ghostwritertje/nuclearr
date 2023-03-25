@@ -25,6 +25,5 @@ public class TransmissionTorrent {
         private Long bytesCompleted;
         private Long length;
         private String name;
-
     }
 }

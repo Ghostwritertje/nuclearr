@@ -16,5 +16,19 @@ public class NuclearrConfiguration {
 
     private List<String> trackers = new ArrayList<>();
 
+    private TransmissionConfiguration transmission;
 
+
+    private boolean hardlinksEnabled;
+    private boolean removeEnabled;
+
+    private Integer batchSize;
+
+
+    @Data
+    private static class TransmissionConfiguration {
+        private String url;
+        private String user;
+        private String password;
+    }
 }

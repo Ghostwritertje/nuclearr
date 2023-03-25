@@ -7,3 +7,5 @@ nuclearr:
     - digitalcore.club
     - cow.milkie.cc
     - tracker.scenetime.com
+  hardlinks-enabled: true
+  remove-enabled: true

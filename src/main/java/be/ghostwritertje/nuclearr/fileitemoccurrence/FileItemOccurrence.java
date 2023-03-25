@@ -1,4 +1,4 @@
-package be.ghostwritertje.nuclearr.domain;
+package be.ghostwritertje.nuclearr.fileitemoccurrence;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,8 +19,8 @@ public class FileItemOccurrence {
     @Column("id")
     Integer id;
 
-    @Column("file_item_id")
-    Integer fileItemId;
+    @Column("file_item_path")
+    String fileItemPath;
 
     @Column("torrent_id")
     Integer torrentId;
