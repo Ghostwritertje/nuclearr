@@ -4,7 +4,6 @@ import be.ghostwritertje.nuclearr.hardlinks.HardlinkFinder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -13,6 +12,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class FileItemService {
     private final FileItemRepository repo;
+    private final FileItemRepo traditionalRepo;
     private final HardlinkFinder hardlinkFinder;
 
 
@@ -24,12 +24,8 @@ public class FileItemService {
         return this.repo.save(fileItem);
     }
 
-    public Flux<FileItem> saveAll(Flux<FileItem> flux) {
-        return this.repo.saveAll(flux);
-    }
-
     public Flux<FileItem> saveAll(Iterable<FileItem> flux) {
-        return this.repo.saveAll(flux);
+        return this.traditionalRepo.saveAll(flux);
     }
 
     public Mono<Void> deleteAll() {

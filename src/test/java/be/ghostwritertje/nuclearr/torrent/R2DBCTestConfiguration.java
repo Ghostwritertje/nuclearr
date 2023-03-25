@@ -1,4 +1,4 @@
-package be.ghostwritertje.nuclearr.config;
+package be.ghostwritertje.nuclearr.torrent;
 
 import io.r2dbc.h2.H2ConnectionConfiguration;
 import io.r2dbc.h2.H2ConnectionFactory;
@@ -11,20 +11,20 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 
 @Configuration
+@Profile("test")
 @Primary
-@Profile("!test")
-public class R2DBCConfiguration extends AbstractR2dbcConfiguration {
+public class R2DBCTestConfiguration extends AbstractR2dbcConfiguration {
 
     @Value("${nuclearr.config.path:/config}")
     private String configPath;
 
     @Bean
-    @Profile("!test")
+    @Profile("test")
     @Override
     public ConnectionFactory connectionFactory() {
         return new H2ConnectionFactory(
                 H2ConnectionConfiguration.builder()
-                        .file(this.configPath + "/nuclearrdb")
+                        .url("~/test-db")
                         .username("sa")
                         .password("sa")
                         .build()

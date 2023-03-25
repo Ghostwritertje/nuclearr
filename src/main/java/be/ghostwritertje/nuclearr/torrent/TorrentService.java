@@ -6,17 +6,16 @@ import be.ghostwritertje.nuclearr.tracker.TrackerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TorrentService {
     private final TorrentRepository repo;
+    private final TorrentRepo traditionalRepo;
+
     private final FileItemOccurrenceService fileItemOccurrenceService;
     private final FileItemService fileItemService;
     private final TrackerService trackerService;
@@ -38,13 +37,14 @@ public class TorrentService {
     }
 
     public Flux<Torrent> saveAll(Iterable<Torrent> flux) {
-        return this.repo.saveAll(flux);
+        return this.traditionalRepo.saveAll(flux);
     }
 
     public Mono<Void> deleteAll() {
-        return this.trackerService.deleteAll()
-                .then(this.fileItemOccurrenceService.deleteAll())
-                .then(this.fileItemService.deleteAll())
-                .then(this.repo.deleteAll());
+        return Mono.empty();
+//        return this.trackerService.deleteAll()
+//                .then(this.fileItemOccurrenceService.deleteAll())
+//                .then(this.fileItemService.deleteAll())
+//                .then(this.repo.deleteAll());
     }
 }

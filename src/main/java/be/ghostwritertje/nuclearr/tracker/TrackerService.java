@@ -1,7 +1,5 @@
 package be.ghostwritertje.nuclearr.tracker;
 
-import be.ghostwritertje.nuclearr.fileitem.FileItemService;
-import be.ghostwritertje.nuclearr.fileitemoccurrence.FileItemOccurrenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,14 +14,11 @@ import reactor.core.publisher.Mono;
 public class TrackerService {
     private final TrackerRepository repo;
 
+    private final TrackerRepo traditionalRepo;
 
-
-    public Flux<Tracker> saveAll(Flux<Tracker> trackerFlux) {
-        return this.repo.saveAll(trackerFlux);
-    }
 
     public Flux<Tracker> saveAll(Iterable<Tracker> trackerFlux) {
-        return this.repo.saveAll(trackerFlux);
+        return this.traditionalRepo.saveAll(trackerFlux);
     }
 
     public Flux<Tracker> findAllByTorrentId(Integer torrentId) {
