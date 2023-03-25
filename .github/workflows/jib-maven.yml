@@ -4,8 +4,6 @@ name: Java Jib with Maven
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   publish:
