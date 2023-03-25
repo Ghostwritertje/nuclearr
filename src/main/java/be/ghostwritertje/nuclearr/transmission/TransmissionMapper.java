@@ -4,6 +4,7 @@ import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrent;
 import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrentFile;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -35,7 +36,7 @@ public class TransmissionMapper {
         return InternalTorrentFile.builder()
                 .bytesCompleted(transmissionFile.getBytesCompleted())
                 .length(transmissionFile.getLength())
-                .name(downloadDir + "/" + transmissionFile.getName())
+                .name(Paths.get(downloadDir, transmissionFile.getName()).toString())
                 .build();
     }
 }

@@ -1,12 +1,14 @@
 package be.ghostwritertje.nuclearr.transmission;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 
 
 @Data
+@Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TransmissionTorrent {
 
@@ -20,6 +22,7 @@ public class TransmissionTorrent {
     private String trackerList;
 
     @Data
+    @Builder
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TransmissionFile {
         private Long bytesCompleted;
