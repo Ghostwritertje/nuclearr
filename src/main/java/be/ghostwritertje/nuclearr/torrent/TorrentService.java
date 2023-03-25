@@ -41,10 +41,9 @@ public class TorrentService {
     }
 
     public Mono<Void> deleteAll() {
-        return Mono.empty();
-//        return this.trackerService.deleteAll()
-//                .then(this.fileItemOccurrenceService.deleteAll())
-//                .then(this.fileItemService.deleteAll())
-//                .then(this.repo.deleteAll());
+        return this.trackerService.deleteAll()
+                .then(this.fileItemOccurrenceService.deleteAll())
+                .then(this.fileItemService.deleteAll())
+                .then(this.repo.deleteAll());
     }
 }
