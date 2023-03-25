@@ -14,8 +14,7 @@ public class InternalTorrent {
     private String hashString;
     private String name;
 
-    //todo refactor to seedTime
-    private Long addedDate;
+    private Long seedTime;
     private String trackerList;
 
 }

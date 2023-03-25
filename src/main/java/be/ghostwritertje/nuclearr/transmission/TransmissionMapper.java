@@ -4,6 +4,8 @@ import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrent;
 import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrentFile;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.stream.Collectors;
 
 @Component
@@ -16,7 +18,7 @@ public class TransmissionMapper {
                 .files(transmissionTorrent.getFiles().stream().map(this::mapInternalTorrentFile).collect(Collectors.toList()))
                 .hashString(transmissionTorrent.getHashString())
                 .name(transmissionTorrent.getName())
-                .addedDate(transmissionTorrent.getAddedDate())
+                .seedTime(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - transmissionTorrent.getAddedDate())
                 .trackerList(transmissionTorrent.getTrackerList())
                 .build();
     }

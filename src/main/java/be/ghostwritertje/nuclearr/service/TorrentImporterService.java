@@ -19,8 +19,6 @@ import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -77,7 +75,7 @@ public class TorrentImporterService {
                 .name(internalTorrent.getName())
                 .hash(internalTorrent.getHashString())
                 .transmissionId(internalTorrent.getId())
-                .seedTime(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - internalTorrent.getAddedDate())
+                .seedTime(internalTorrent.getSeedTime())
                 .build();
     }
 
