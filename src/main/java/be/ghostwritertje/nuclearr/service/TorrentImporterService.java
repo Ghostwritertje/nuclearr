@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 @Slf4j
 public class TorrentImporterService {
-    public static final Pattern TRACKER_PATTERN = Pattern.compile("//([^/]+)(:\\d+)/");
+    public static final Pattern TRACKER_PATTERN = Pattern.compile("//([^/]+)(:\\d+)/?");
     private final TorrentClientAdapter torrentClientAdapter;
     private final TorrentService torrentService;
     private final TrackerService trackerService;
