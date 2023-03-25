@@ -1,9 +1,8 @@
 package be.ghostwritertje.nuclearr.controller;
 
-import be.ghostwritertje.nuclearr.fileitemoccurrence.FileItemOccurrence;
-import be.ghostwritertje.nuclearr.torrent.Torrent;
 import be.ghostwritertje.nuclearr.service.TorrentImporterService;
 import be.ghostwritertje.nuclearr.service.TorrentRemovalService;
+import be.ghostwritertje.nuclearr.torrent.Torrent;
 import be.ghostwritertje.nuclearr.torrent.TorrentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +25,8 @@ public class TorrentController {
     }
 
     @PostMapping("/file")
-    public Flux<FileItemOccurrence> importFileItemOccurrences() {
-        return torrentImporterService.deleteAll().thenMany(torrentImporterService.importFileItems());
+    public Mono<Void> importFileItemOccurrences() {
+        return torrentImporterService.importTorrents();
     }
 
     @DeleteMapping

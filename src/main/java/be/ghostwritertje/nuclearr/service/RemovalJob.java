@@ -5,9 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StopWatch;
-import reactor.core.publisher.Mono;
 
 import java.util.concurrent.TimeUnit;
 
@@ -17,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class RemovalJob {
 
 //    private final TorrentRemovalService torrentRemovalService;
-    private final TorrentImporterServiceV2 torrentImporterService;
+    private final TorrentImporterService torrentImporterService;
     private final TorrentService torrentService;
 
     @Scheduled(fixedDelay = 3600, initialDelay = 1, timeUnit = TimeUnit.SECONDS)
@@ -25,7 +22,8 @@ public class RemovalJob {
         log.info("deleting torrents");
 
         torrentService.deleteAll()
-                .subscribe(ignored -> log.debug("DELETED!"), ignored -> log.error("Failed deleting torrents", ignored),
-                        () -> log.info("finished deleting torrents"));
+                .then(torrentImporterService.importTorrents())
+                .subscribe(ignored -> log.debug("DELETED!"), ignored -> log.error("failed job", ignored),
+                        () -> log.info("finished job"));
     }
 }
