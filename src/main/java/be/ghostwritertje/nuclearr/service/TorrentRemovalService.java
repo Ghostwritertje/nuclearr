@@ -3,22 +3,24 @@ package be.ghostwritertje.nuclearr.service;
 import be.ghostwritertje.nuclearr.config.NuclearrConfiguration;
 import be.ghostwritertje.nuclearr.internaltorrent.TorrentClientAdapter;
 import be.ghostwritertje.nuclearr.removed.Removed;
-import be.ghostwritertje.nuclearr.presentation.TorrentSupportDto;
-import be.ghostwritertje.nuclearr.presentation.TrackerDto;
 import be.ghostwritertje.nuclearr.removed.RemovedService;
-import be.ghostwritertje.nuclearr.transmission.TransmissionAdapter;
+import be.ghostwritertje.nuclearr.representation.Representation;
+import be.ghostwritertje.nuclearr.representation.RepresentationService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class TorrentRemovalService {
 
     private final RemovedService removedService;
@@ -26,45 +28,42 @@ public class TorrentRemovalService {
     public final Set<String> trackers;
     private final RepresentationService representationService;
 
-    public TorrentRemovalService(
-            RemovedService removedService,
-            TorrentClientAdapter<?> torrentClientAdapter,
-            RepresentationService representationService,
-            NuclearrConfiguration nuclearrConfiguration) {
-        this.removedService = removedService;
-        this.torrentClientAdapter = torrentClientAdapter;
-        this.trackers = new HashSet<>(nuclearrConfiguration.getTrackers());
-        this.representationService = representationService;
-    }
+    private final NuclearrConfiguration nuclearrConfiguration;
+
 
     public Mono<Void> removeTorrents() {
         long minimumSeedTime = TimeUnit.DAYS.toSeconds(30);
 
-        return representationService.represent()
-                .filter(masterTorrentDto -> masterTorrentDto.getLowestSeedTime() > minimumSeedTime)
-                .filter(masterTorrentDto -> masterTorrentDto.getMaxHardLinks() < 2)
-                .filter(masterTorrentDto -> trackers.containsAll(masterTorrentDto.getAllTrackers()))
-                .flatMap(masterTorrentDto -> removeTorrent(masterTorrentDto).then(Mono.just(masterTorrentDto)))
-                .flatMap(masterTorrentDto -> Flux.fromStream(masterTorrentDto.getChildTorrentDtos().stream()))
-                .flatMap(childTorrentDto -> removeTorrent(childTorrentDto).then(Mono.just(childTorrentDto)))
+        return representationService.findAll()
+                .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getSeedTime()))
+                .filter(masterTorrentDto -> masterTorrentDto.getSeedTime() > minimumSeedTime)
+                .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getHardlinks()))
+                .filter(masterTorrentDto -> masterTorrentDto.getHardlinks() < 2)
+                .filter(masterTorrentDto -> trackers.containsAll(Arrays.asList(masterTorrentDto.getTrackers())))
+                .flatMap(this::removeTorrent)
                 .then(Mono.fromRunnable(() -> log.info("Finished removing torrents")));
     }
 
-    private Mono<Removed> removeTorrent(TorrentSupportDto masterTorrentDto) {
-        return removedService.findRemovedByTransmissionId(masterTorrentDto.getTransmissionId()) //todo: should work with hash maybe
-                .switchIfEmpty(
-                        removedService.save(Removed.builder()
-                                        .name(masterTorrentDto.getName())
-                                        .seedTime(masterTorrentDto.getSeedTime())
-                                        .hardlinks(masterTorrentDto.getId())
-                                        .trackers(masterTorrentDto.getTrackerList().stream().map(TrackerDto::getName).distinct().collect(Collectors.joining(", ")))
-                                        .transmissionId(masterTorrentDto.getTransmissionId())
-                                        .build())
-                                .log()
-                                .flatMap(removed -> torrentClientAdapter.removeTorrent(removed.getTransmissionId()).then(Mono.just(removed))));
+    private Flux<Removed> removeTorrent(Representation representation) {
+        return Flux.fromArray(representation.getChildTorrentTransmissionIds())
+                .flatMap(id -> this.remove(id, representation));
+    }
+
+    private Mono<Removed> remove(Integer id, Representation representation) {
+        return removedService.findRemovedByTransmissionId(id)
+                .switchIfEmpty(removedService.save(Removed.builder()
+                        .name(representation.getName())
+                        .seedTime(representation.getSeedTime())
+                        .hardlinks(representation.getHardlinks())
+                        .trackers(Arrays.stream(representation.getTrackers()).distinct().collect(Collectors.joining(", ")))
+                        .transmissionId(id)
+                        .build()));
     }
 
     public Mono<Void> removeTorrent(Integer transmissionId) {
+        if (!nuclearrConfiguration.isHardlinksEnabled())  {
+            return Mono.fromRunnable(() -> log.info("Not removing torrent with id {} (removing is DISABLED)", transmissionId));
+        }
         return torrentClientAdapter.removeTorrent(transmissionId);
     }
 }

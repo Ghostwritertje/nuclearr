@@ -34,4 +34,8 @@ public class FileItemOccurrenceService {
         return this.repo.findFileItemOccurrencesByTorrentId(torrentId);
     }
 
+    public Flux<FileItemOccurrence> findFileItemOccurrencesByFileItemPathInAndTorrentIdNot(List<String> fileItemPaths, Integer torrentId){
+        return this.repo.findFileItemOccurrencesByFileItemPathInAndTorrentIdNot(fileItemPaths, torrentId);
+    }
+
 }

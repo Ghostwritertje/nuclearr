@@ -20,6 +20,7 @@ public class NuclearrConfiguration {
 
 
     private boolean hardlinksEnabled;
+    private boolean removeEnabled;
 
     private Integer batchSize;
 
