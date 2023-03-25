@@ -8,18 +8,20 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  publish:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-    - name: Build with Maven
-      run: mvn compile jib:build -Dimage=ghostwritertje/nuclearr -Djib.to.auth.username=${{ secrets.DOCKER_USERNAME }} -Djib.to.auth.password=${{ secrets.DOCKER_USERNAME }}
-      shell: bash
+      - name: JIB container build and publish
+        uses: MathieuSoysal/jib-container-publish.yml@v2.1.4
+        with:
+          # Use docker.io for Docker Hub if empty
+          REGISTRY: registry.hub.docker.com
+          # github.repository as <your-account>/<your-repo>
+          IMAGE_NAME: ${{ github.repository }}
+          # Tag name of the image to publish
+          tag-name: ${{ github.event.release.tag_name }}
+          # Username to login to registry
+          USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          # Password to login to registry
+          java-version: 17
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
