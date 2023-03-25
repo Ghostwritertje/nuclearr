@@ -70,7 +70,7 @@ public class TransmissionAdapter implements TorrentClientAdapter {
                 .flatMapMany(transmissionResponse -> Flux.fromIterable(transmissionResponse.getArguments().getTorrents()))
                 .map(transmissionTorrent -> {
                     transmissionTorrent.getFiles()
-                            .forEach(transmissionFile -> transmissionFile.setName(transmissionTorrent.getDownloadDir() + "/" + transmissionFile.getName()));
+                            .forEach(transmissionFile -> transmissionFile.setName(transmissionFile.getName()));
                     return transmissionTorrent;
                 });
     }
