@@ -44,14 +44,15 @@ public class TorrentImporterService {
         //todo this mapping should occurr in clientAdapter
         return Flux.fromStream(Arrays.stream(internalTorrent.getTrackerList().split("\n"))
                 .map(tracker -> {
+                    String result = null;
                     Matcher matcher = TRACKER_PATTERN.matcher(tracker);
                     if (matcher.find()) {
-                        return matcher.group(1);
-                    } else {
-                        return null;
+                        result = matcher.group(1);
                     }
+
+                    return result != null ? result : "ERROR";
+
                 })
-                .filter(Objects::nonNull)
                 .filter(StringUtils::hasText));
     }
 
