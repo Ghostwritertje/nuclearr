@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -15,7 +16,7 @@ public class TransmissionMapper {
         return InternalTorrent.builder()
                 .id(transmissionTorrent.getId())
                 .downloadDir(transmissionTorrent.getDownloadDir())
-                .files(transmissionTorrent.getFiles().stream().map(this::mapInternalTorrentFile).collect(Collectors.toList()))
+                .files(mapInternalTorrentFiles(transmissionTorrent))
                 .hashString(transmissionTorrent.getHashString())
                 .name(transmissionTorrent.getName())
                 .seedTime(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - transmissionTorrent.getAddedDate())
@@ -23,11 +24,18 @@ public class TransmissionMapper {
                 .build();
     }
 
-    private InternalTorrentFile mapInternalTorrentFile(TransmissionTorrent.TransmissionFile transmissionFile) {
+    private List<InternalTorrentFile> mapInternalTorrentFiles(TransmissionTorrent transmissionTorrent) {
+        return transmissionTorrent.getFiles()
+                .stream()
+                .map(transmissionFile -> mapInternalTorrentFile(transmissionFile, transmissionTorrent.getDownloadDir()))
+                .collect(Collectors.toList());
+    }
+
+    private InternalTorrentFile mapInternalTorrentFile(TransmissionTorrent.TransmissionFile transmissionFile, String downloadDir) {
         return InternalTorrentFile.builder()
                 .bytesCompleted(transmissionFile.getBytesCompleted())
                 .length(transmissionFile.getLength())
-                .name(transmissionFile.getName())
+                .name(downloadDir + "/" + transmissionFile.getName())
                 .build();
     }
 }

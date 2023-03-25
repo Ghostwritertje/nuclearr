@@ -1,5 +1,6 @@
 package be.ghostwritertje.nuclearr.transmission;
 
+import be.ghostwritertje.nuclearr.config.NuclearrConfiguration;
 import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrent;
 import be.ghostwritertje.nuclearr.internaltorrent.TorrentClientAdapter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,8 @@ public class TransmissionAdapter implements TorrentClientAdapter {
     private final TransmissionMapper transmissionMapper;
     private String transmissionSessionId = "";
 
+    private NuclearrConfiguration nuclearrConfiguration;
+
     public Mono<List<TransmissionTorrent>> retrieveAllTorrents() {
         return this.sendRequest(new TransmissionRequest())
                 .flatMap(transmissionResponse -> Mono.just(transmissionResponse.getArguments().getTorrents()));
@@ -36,8 +39,8 @@ public class TransmissionAdapter implements TorrentClientAdapter {
                 .log("transmission", Level.FINE)
                 .flatMapMany(list -> Flux.fromStream(list.stream()))
                 .onBackpressureBuffer()
-                .buffer(200)
-                .doOnEach(ignored -> log.info("Retrieving details of 200 items from Transmission {}", ignored.getType()))
+                .buffer(nuclearrConfiguration.getBatchSize())
+                .doOnEach(ignored -> log.info("Retrieving details of {}} items from Transmission {}", nuclearrConfiguration.getBatchSize(), ignored.getType()))
                 .flatMap(tt -> this.getDetails(tt.stream().map(TransmissionTorrent::getId).toArray(Integer[]::new)))
                 .map(transmissionMapper::mapInternalTorrent);
     }
