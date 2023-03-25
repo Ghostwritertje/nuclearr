@@ -19,8 +19,7 @@ public class HardlinkService {
     public Mono<Void> updateAllHardlinks() {
         return fileItemService.findAll()
                 .flatMap(hardlinkFinder::findHardLinks)
-                .buffer(nuclearrConfiguration.getBatchSize())
-                .flatMap(fileItemService::saveAll)
+                .flatMap(fileItemService::save)
                 .then(Mono.fromRunnable(() -> log.info("Finished updating hardlinks")));
     }
 }

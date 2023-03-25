@@ -95,7 +95,7 @@ public class TorrentImporterService {
         internalTorrentFlux.connect();
         torrentFlux.connect();
 
-        return Flux.zip(fileItemFlux.then(), fileItemOccurrenceFlux.then(), trackerFlux.then())
+        return Flux.merge(fileItemFlux.then(), fileItemOccurrenceFlux.then(), trackerFlux.then())
                 .then(Mono.fromRunnable(() -> log.info("finished importing everything")));
     }
 }
