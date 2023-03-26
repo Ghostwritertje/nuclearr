@@ -19,7 +19,7 @@ public class RemovalJob {
     private final HardlinkService hardlinkService;
     private final TorrentService torrentService;
 
-    @Scheduled(fixedDelay = 3600, initialDelay = 60, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedDelay = 1440, initialDelay = 1, timeUnit = TimeUnit.MINUTES)
     public void scheduled() {
         log.info("deleting torrents");
 
