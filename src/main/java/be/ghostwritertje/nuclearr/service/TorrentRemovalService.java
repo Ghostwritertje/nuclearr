@@ -34,7 +34,7 @@ public class TorrentRemovalService {
     public Mono<Void> removeTorrents() {
         long minimumSeedTime = TimeUnit.DAYS.toSeconds(30);
 
-        return representationService.findAllByHardlinksIsLessThanAndSeedTimeLessThan(2, minimumSeedTime)
+        return representationService.findAllByHardlinksIsLessThanAndSeedTimeGreaterThan(2, minimumSeedTime)
                 .log()
                 .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getSeedTime()))
                 .filter(masterTorrentDto -> masterTorrentDto.getSeedTime() > minimumSeedTime)

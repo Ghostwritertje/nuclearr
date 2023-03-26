@@ -5,5 +5,5 @@ import reactor.core.publisher.Flux;
 
 interface RepresentationRepository extends ReactiveCrudRepository<Representation, String> {
 
-    Flux<Representation> findAllByHardlinksIsLessThanAndSeedTimeLessThan(Integer hardlinkCount, Long seedTime);
+    Flux<Representation> findAllByHardlinksIsLessThanAndSeedTimeGreaterThan(Integer hardlinkCount, Long seedTime);
 }

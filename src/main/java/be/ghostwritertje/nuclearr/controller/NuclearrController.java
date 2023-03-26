@@ -45,7 +45,7 @@ public class NuclearrController {
 
     @GetMapping("/representation/filtered")
     public Flux<Representation> representFiltered() {
-        return representationService.findAllByHardlinksIsLessThanAndSeedTimeLessThan(2, Duration.ofDays(30).toSeconds());
+        return representationService.findAllByHardlinksIsLessThanAndSeedTimeGreaterThan(2, Duration.ofDays(30).toSeconds());
     }
 
     @DeleteMapping("/delete-all")
