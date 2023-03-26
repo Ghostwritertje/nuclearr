@@ -28,4 +28,8 @@ public class TrackerService {
     public Mono<Void> deleteAll() {
         return this.repo.deleteAll();
     }
+
+    public Mono<Void> deleteByTorrentId(Integer torrentId) {
+        return this.repo.deleteAllByTorrentId(torrentId);
+    }
 }

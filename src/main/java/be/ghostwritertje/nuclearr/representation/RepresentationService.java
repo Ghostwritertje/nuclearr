@@ -14,4 +14,9 @@ public class RepresentationService {
     public Flux<Representation> findAll() {
         return this.repo.findAll();
     }
+
+    public Flux<Representation> findAllByHardlinksIsLessThanAndSeedTimeLessThan(Integer hardlinkCount, Long seedTime) {
+        return this.repo.findAllByHardlinksIsLessThanAndSeedTimeLessThan(hardlinkCount, seedTime);
+    }
+
 }

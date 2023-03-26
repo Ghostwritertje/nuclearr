@@ -35,4 +35,7 @@ public class FileItemOccurrenceService {
         return this.repo.findFileItemOccurrencesByFileItemPathInAndTorrentIdNot(fileItemPaths, torrentId);
     }
 
+    public Mono<Void> deleteByTorrentId(Integer id) {
+        return this.repo.deleteAllByTorrentId(id);
+    }
 }

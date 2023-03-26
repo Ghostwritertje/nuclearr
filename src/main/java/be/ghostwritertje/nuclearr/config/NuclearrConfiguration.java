@@ -5,8 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Configuration
 @EnableConfigurationProperties
@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 public class NuclearrConfiguration {
 
-    private List<String> trackers = new ArrayList<>();
+    private Set<String> trackers = new HashSet<>();
 
     private TransmissionConfiguration transmission;
 

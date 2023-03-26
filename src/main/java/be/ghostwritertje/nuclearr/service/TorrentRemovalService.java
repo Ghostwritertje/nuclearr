@@ -6,6 +6,7 @@ import be.ghostwritertje.nuclearr.removed.Removed;
 import be.ghostwritertje.nuclearr.removed.RemovedService;
 import be.ghostwritertje.nuclearr.representation.Representation;
 import be.ghostwritertje.nuclearr.representation.RepresentationService;
+import be.ghostwritertje.nuclearr.torrent.TorrentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -28,30 +28,32 @@ public class TorrentRemovalService {
     private final RepresentationService representationService;
 
     private final NuclearrConfiguration nuclearrConfiguration;
+    private final TorrentService torrentService;
 
 
     public Mono<Void> removeTorrents() {
         long minimumSeedTime = TimeUnit.DAYS.toSeconds(30);
 
-        return representationService.findAll()
+        return representationService.findAllByHardlinksIsLessThanAndSeedTimeLessThan(2, minimumSeedTime)
+                .log()
                 .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getSeedTime()))
                 .filter(masterTorrentDto -> masterTorrentDto.getSeedTime() > minimumSeedTime)
                 .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getHardlinks()))
                 .filter(masterTorrentDto -> masterTorrentDto.getHardlinks() < 2)
                 .filter(masterTorrentDto -> nuclearrConfiguration.getTrackers().containsAll(Arrays.asList(masterTorrentDto.getTrackers())))
-                .flatMap(this::removeTorrent)
+                .flatMap(this::createRemovedItem)
                 .doOnEach(ignored -> log.info("Removing torrent "))
                 .map(Removed::getTransmissionId)
-                .flatMap(this::removeTorrent)
+                .flatMap(this::removeTorrentFromTorrentClient)
                 .then(Mono.fromRunnable(() -> log.info("Finished removing torrents")));
     }
 
-    private Flux<Removed> removeTorrent(Representation representation) {
+    private Flux<Removed> createRemovedItem(Representation representation) {
         return Flux.fromArray(representation.getChildTorrentTransmissionIds())
-                .flatMap(id -> this.remove(id, representation));
+                .flatMap(id -> this.createRemovedItem(id, representation));
     }
 
-    private Mono<Removed> remove(Integer id, Representation representation) {
+    private Mono<Removed> createRemovedItem(Integer id, Representation representation) {
         return removedService.findRemovedByTransmissionId(id)
                 .switchIfEmpty(removedService.save(Removed.builder()
                         .name(representation.getName())
@@ -62,10 +64,13 @@ public class TorrentRemovalService {
                         .build()));
     }
 
-    public Mono<Void> removeTorrent(Integer transmissionId) {
+    public Mono<Void> removeTorrentFromTorrentClient(Integer transmissionId) {
+        Mono<Void> voidMono;
         if (!nuclearrConfiguration.isHardlinksEnabled()) {
-            return Mono.fromRunnable(() -> log.info("Not removing torrent with id {} (removing is DISABLED)", transmissionId));
+            voidMono = Mono.fromRunnable(() -> log.info("Not removing torrent with id {} (removing is DISABLED)", transmissionId));
+        } else {
+            voidMono = torrentClientAdapter.removeTorrent(transmissionId);
         }
-        return torrentClientAdapter.removeTorrent(transmissionId);
+        return Mono.from(Flux.merge(voidMono, torrentService.deleteByTransmissionId(transmissionId)));
     }
 }

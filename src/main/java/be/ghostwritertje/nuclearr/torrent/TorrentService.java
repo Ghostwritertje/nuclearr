@@ -46,4 +46,14 @@ public class TorrentService {
                 .then(this.fileItemService.deleteAll())
                 .then(this.repo.deleteAll());
     }
+
+    public Mono<Void> deleteByTransmissionId(Integer transmissionId) {
+        return Mono.from(this.repo.findByTransmissionId(transmissionId)
+                .flatMapMany(torrent -> {
+                    Mono<Void> occurrencesDelete = this.fileItemOccurrenceService.deleteByTorrentId(torrent.getId());
+                    Mono<Void> trackersDelete = this.trackerService.deleteByTorrentId(torrent.getId());
+
+                    return Flux.merge(occurrencesDelete, trackersDelete);
+                }));
+    }
 }
