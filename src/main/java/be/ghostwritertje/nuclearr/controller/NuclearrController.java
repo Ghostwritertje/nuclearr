@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 @RestController
 @RequestMapping("/api/nuclearr")
 @RequiredArgsConstructor
@@ -39,6 +41,11 @@ public class NuclearrController {
     @GetMapping("/representation")
     public Flux<Representation> represent() {
         return representationService.findAll();
+    }
+
+    @GetMapping("/representation/filtered")
+    public Flux<Representation> representFiltered() {
+        return representationService.findAllByHardlinksIsLessThanAndSeedTimeLessThan(2, Duration.ofDays(30).toSeconds());
     }
 
     @DeleteMapping("/delete-all")
