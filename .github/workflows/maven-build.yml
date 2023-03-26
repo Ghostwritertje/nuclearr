@@ -14,6 +14,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: Maven clean compile
-        run: mvn clean compile
+      - name: Maven clean install
+        run: mvn clean install
         shell: bash
