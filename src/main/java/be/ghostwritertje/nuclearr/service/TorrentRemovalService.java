@@ -52,9 +52,11 @@ public class TorrentRemovalService {
         return masterTorrentDto -> {
             boolean canBeRemoved = nuclearrConfiguration.getTrackers().containsAll(Arrays.asList(masterTorrentDto.getTrackers()));
             if (!canBeRemoved) {
+                ArrayList<String> trackersNotConfigured = new ArrayList<>(Arrays.asList(masterTorrentDto.getTrackers()));
+                trackersNotConfigured.removeAll(nuclearrConfiguration.getTrackers());
                 log.info("Torrent {} cannot be removed because trackers {} are not configured for removal",
-                        masterTorrentDto.getName(),
-                        new ArrayList<>(Arrays.asList(masterTorrentDto.getTrackers())).removeAll(nuclearrConfiguration.getTrackers()));
+                        masterTorrentDto.getName(), String.join(",", trackersNotConfigured));
+
             }
 
             return canBeRemoved;
