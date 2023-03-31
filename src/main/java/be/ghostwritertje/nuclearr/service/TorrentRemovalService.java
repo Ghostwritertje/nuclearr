@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +54,7 @@ public class TorrentRemovalService {
             if (!canBeRemoved) {
                 log.info("Torrent {} cannot be removed because trackers {} are not configured for removal",
                         masterTorrentDto.getName(),
-                        Arrays.asList(masterTorrentDto.getTrackers()).removeAll(nuclearrConfiguration.getTrackers()));
+                        new ArrayList<>(Arrays.asList(masterTorrentDto.getTrackers())).removeAll(nuclearrConfiguration.getTrackers()));
             }
 
             return canBeRemoved;
