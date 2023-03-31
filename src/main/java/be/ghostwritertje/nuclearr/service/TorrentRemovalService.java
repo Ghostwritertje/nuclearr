@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,21 +32,32 @@ public class TorrentRemovalService {
     private final TorrentService torrentService;
 
 
-    public Mono<Void> removeTorrents() {
+    public Flux<Void> removeTorrents() {
         long minimumSeedTime = TimeUnit.DAYS.toSeconds(30);
 
         return representationService.findAllByHardlinksIsLessThanAndSeedTimeGreaterThan(2, minimumSeedTime)
-                .log()
                 .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getSeedTime()))
                 .filter(masterTorrentDto -> masterTorrentDto.getSeedTime() > minimumSeedTime)
                 .filter(masterTorrentDto -> Objects.nonNull(masterTorrentDto.getHardlinks()))
                 .filter(masterTorrentDto -> masterTorrentDto.getHardlinks() < 2)
-                .filter(masterTorrentDto -> nuclearrConfiguration.getTrackers().containsAll(Arrays.asList(masterTorrentDto.getTrackers())))
+                .filter(filterBasedOnTrackers())
                 .flatMap(this::createRemovedItem)
-                .doOnEach(ignored -> log.info("Removing torrent "))
+                .doOnEach(ignored -> log.info("Removing torrent with name {}", ignored.get() != null ? ignored.get().getName() : null))
                 .map(Removed::getTransmissionId)
-                .flatMap(this::removeTorrentFromTorrentClient)
-                .then(Mono.fromRunnable(() -> log.info("Finished removing torrents")));
+                .flatMap(this::removeTorrentFromTorrentClient);
+    }
+
+    private Predicate<Representation> filterBasedOnTrackers() {
+        return masterTorrentDto -> {
+            boolean canBeRemoved = nuclearrConfiguration.getTrackers().containsAll(Arrays.asList(masterTorrentDto.getTrackers()));
+            if (!canBeRemoved) {
+                log.info("Torrent {} cannot be removed because trackers {} are not configured for removal",
+                        masterTorrentDto.getName(),
+                        Arrays.asList(masterTorrentDto.getTrackers()).removeAll(nuclearrConfiguration.getTrackers()));
+            }
+
+            return canBeRemoved;
+        };
     }
 
     private Flux<Removed> createRemovedItem(Representation representation) {
@@ -66,7 +78,7 @@ public class TorrentRemovalService {
 
     public Mono<Void> removeTorrentFromTorrentClient(Integer transmissionId) {
         Mono<Void> voidMono;
-        if (!nuclearrConfiguration.isHardlinksEnabled()) {
+        if (!nuclearrConfiguration.isRemoveEnabled()) {
             voidMono = Mono.fromRunnable(() -> log.info("Not removing torrent with id {} (removing is DISABLED)", transmissionId));
         } else {
             voidMono = torrentClientAdapter.removeTorrent(transmissionId);

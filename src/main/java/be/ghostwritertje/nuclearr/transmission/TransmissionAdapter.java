@@ -23,9 +23,8 @@ public class TransmissionAdapter implements TorrentClientAdapter {
     public static final String TRANSMISSION_SESSION_ID_HEADER = "X-Transmission-Session-Id";
     private final WebClient transmissionClient;
     private final TransmissionMapper transmissionMapper;
-    private String transmissionSessionId = "";
-
     private final NuclearrConfiguration nuclearrConfiguration;
+    private String transmissionSessionId = "";
 
     public Mono<List<TransmissionTorrent>> retrieveAllTorrents() {
         return this.sendRequest(new TransmissionRequest())
@@ -40,7 +39,7 @@ public class TransmissionAdapter implements TorrentClientAdapter {
                 .flatMapMany(list -> Flux.fromStream(list.stream()))
                 .onBackpressureBuffer()
                 .buffer(nuclearrConfiguration.getBatchSize())
-                .doOnEach(ignored -> log.info("Retrieving details of {}} items from Transmission {}", nuclearrConfiguration.getBatchSize(), ignored.getType()))
+                .doOnEach(ignored -> log.debug("Retrieving details of {}} items from Transmission {}", nuclearrConfiguration.getBatchSize(), ignored.getType()))
                 .flatMap(tt -> this.getDetails(tt.stream().map(TransmissionTorrent::getId).toArray(Integer[]::new)))
                 .map(transmissionMapper::mapInternalTorrent);
     }
@@ -56,7 +55,7 @@ public class TransmissionAdapter implements TorrentClientAdapter {
                         .build())
                 .build();
         return sendRequest(request)
-                .then(Mono.fromRunnable(() -> log.info("Removed torrent with id {} from transmission", id)));
+                .then(Mono.fromRunnable(() -> log.debug("Removed torrent with id {} from transmission", id)));
     }
 
     public Flux<TransmissionTorrent> getDetails(Integer... id) {

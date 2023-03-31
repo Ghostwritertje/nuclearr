@@ -22,7 +22,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,7 +63,6 @@ public class TorrentImporterService {
         ConnectableFlux<Torrent> torrentFlux = internalTorrentFlux
                 .map(internalTorrentMapper::mapInternalTorrent)
                 .buffer(nuclearrConfiguration.getBatchSize())
-                .doOnEach(ignored -> log.info("saving {} Torrents {}", nuclearrConfiguration.getBatchSize(), ignored.getType()))
                 .flatMap(torrentService::saveAll)
                 .publish();
 
@@ -74,7 +72,6 @@ public class TorrentImporterService {
                 .map(s -> FileItem.builder().path(s).build())
                 .distinct(FileItem::getPath)
                 .buffer(nuclearrConfiguration.getBatchSize())
-                .doOnEach(ignored -> log.info("saving {} FileItems {}", nuclearrConfiguration.getBatchSize(), ignored.getType()))
                 .flatMap(fileItemService::saveAll);
 
         Flux<FileItemOccurrence> fileItemOccurrenceFlux = Flux.zip(internalTorrentFlux.onBackpressureBuffer(), torrentFlux.onBackpressureBuffer())
@@ -84,13 +81,11 @@ public class TorrentImporterService {
                 })
                 .flatMap(tuple2 -> Flux.fromStream(tuple2.getT1().getFiles().stream().map(file -> internalTorrentMapper.mapFileItemOccurrence(tuple2.getT2(), file.getName()))))
                 .buffer(nuclearrConfiguration.getBatchSize())
-                .doOnEach(ignored -> log.info("saving {} fileItemOccurrences {}", nuclearrConfiguration.getBatchSize(), ignored.getType()))
                 .flatMap(fileItemOccurrenceService::saveAll);
 
         Flux<Tracker> trackerFlux = Flux.zip(internalTorrentFlux.onBackpressureBuffer(), torrentFlux.onBackpressureBuffer())
                 .flatMap(tuple -> extractTrackerList(tuple.getT1()).map(tracker -> internalTorrentMapper.mapTracker(tuple.getT2(), tracker)))
                 .buffer(nuclearrConfiguration.getBatchSize())
-                .doOnEach(ignored -> log.info("saving {} trackers {}", nuclearrConfiguration.getBatchSize(), ignored.getType()))
                 .flatMap(trackerService::saveAll);
 
         internalTorrentFlux.connect();

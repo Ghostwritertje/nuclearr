@@ -15,7 +15,9 @@ public class FileItemOccurrenceService {
     private final FileItemOccurrenceRepository repo;
     private final FileItemOccurrenceRepo traditionalRepo;
 
-    public Flux<FileItemOccurrence> saveAll(Iterable<FileItemOccurrence> flux) {
+    public Flux<FileItemOccurrence> saveAll(List<FileItemOccurrence> flux) {
+        log.debug("saving {} fileItemOccurrences", flux.size());
+
         return this.traditionalRepo.saveAll(flux);
     }
 

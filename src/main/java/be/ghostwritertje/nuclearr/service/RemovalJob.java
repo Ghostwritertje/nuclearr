@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 @AllArgsConstructor
@@ -21,13 +22,14 @@ public class RemovalJob {
 
     @Scheduled(fixedDelay = 1440, initialDelay = 1, timeUnit = TimeUnit.MINUTES)
     public void scheduled() {
-        log.info("deleting torrents");
+        log.info("resetting torrents in database");
+        var count = new AtomicInteger(0);
 
         torrentService.deleteAll()
                 .then(torrentImporterService.importTorrents())
                 .then(hardlinkService.updateAllHardlinks())
-                .then(torrentRemovalService.removeTorrents())
-                .subscribe(ignored -> log.debug("DELETED!"), ignored -> log.error("failed job", ignored),
-                        () -> log.info("finished job"));
+                .thenMany(torrentRemovalService.removeTorrents())
+                .subscribe(ignored -> log.debug("DELETED {}", count.incrementAndGet()), ignored -> log.error("failed job", ignored),
+                        () -> log.info("finished and removed {} torrents", count.get()));
     }
 }

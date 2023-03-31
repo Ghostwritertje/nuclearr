@@ -49,7 +49,7 @@ public class NuclearrController {
     }
 
     @DeleteMapping("/delete-all")
-    public Mono<Void> deleteAll() {
+    public Flux<Void> deleteAll() {
         return torrentRemovalService.removeTorrents();
     }
 }

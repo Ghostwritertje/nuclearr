@@ -2,10 +2,8 @@ package be.ghostwritertje.nuclearr.hardlinks;
 
 import be.ghostwritertje.nuclearr.config.NuclearrConfiguration;
 import be.ghostwritertje.nuclearr.fileitem.FileItem;
-import be.ghostwritertje.nuclearr.fileitem.FileItemService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -35,7 +33,7 @@ public class HardlinkFinder {
                         fileItem.setHardlinks((Integer) attribute);
                         return fileItem;
                     } catch (IOException e) {
-                        log.warn("Could not find hardlinks");
+                        log.debug("Could not find hardlinks");
                         return fileItem;
                     }
                 });

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,7 +38,8 @@ public class TorrentService {
         return this.repo.saveAll(flux);
     }
 
-    public Flux<Torrent> saveAll(Iterable<Torrent> flux) {
+    public Flux<Torrent> saveAll(List<Torrent> flux) {
+        log.debug("saving {} Torrents", flux.size());
         return this.traditionalRepo.saveAll(flux);
     }
 

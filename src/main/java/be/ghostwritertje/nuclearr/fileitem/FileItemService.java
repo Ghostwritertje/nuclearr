@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -24,7 +26,8 @@ public class FileItemService {
         return this.repo.save(fileItem);
     }
 
-    public Flux<FileItem> saveAll(Iterable<FileItem> flux) {
+    public Flux<FileItem> saveAll(List<FileItem> flux) {
+        log.debug("saving {} fileItems", flux.size());
         return this.traditionalRepo.saveAll(flux);
     }
 
