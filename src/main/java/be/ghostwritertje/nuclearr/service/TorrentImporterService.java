@@ -48,7 +48,6 @@ public class TorrentImporterService {
 
 
         Flux<FileItem> fileItemFlux = internalTorrentFlux.flatMap(internalTorrent -> Flux.fromIterable(internalTorrent.getFiles()))
-                .log()
                 .map(InternalTorrentFile::getName)
                 .map(s -> FileItem.builder().path(s).build())
                 .distinct(FileItem::getPath)
