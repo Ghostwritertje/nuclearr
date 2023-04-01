@@ -34,9 +34,7 @@ public class TransmissionMapper {
     }
 
     private long mapSeedTime(TransmissionTorrent transmissionTorrent) {
-        long epochSecond = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
-        System.out.println(epochSecond);
-        return epochSecond - transmissionTorrent.getAddedDate();
+        return LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - transmissionTorrent.getAddedDate();
     }
 
     private List<InternalTorrentFile> mapInternalTorrentFiles(TransmissionTorrent transmissionTorrent) {

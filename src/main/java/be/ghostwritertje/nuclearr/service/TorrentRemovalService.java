@@ -7,6 +7,7 @@ import be.ghostwritertje.nuclearr.removed.RemovedService;
 import be.ghostwritertje.nuclearr.representation.Representation;
 import be.ghostwritertje.nuclearr.representation.RepresentationService;
 import be.ghostwritertje.nuclearr.torrent.TorrentService;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,7 @@ public class TorrentRemovalService {
                 ArrayList<String> trackersNotConfigured = new ArrayList<>(Arrays.asList(masterTorrentDto.getTrackers()));
                 trackersNotConfigured.removeAll(nuclearrConfiguration.getTrackers());
                 log.info("Torrent {} cannot be removed because trackers {} are not configured for removal",
-                        masterTorrentDto.getName(), String.join(",", trackersNotConfigured));
+                        StringUtils.truncate(masterTorrentDto.getName(), 15, "..."), String.join(",", trackersNotConfigured));
 
             }
 

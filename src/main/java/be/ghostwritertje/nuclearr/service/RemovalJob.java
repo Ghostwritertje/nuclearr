@@ -27,7 +27,7 @@ public class RemovalJob {
         var count = new AtomicInteger(0);
 
         removeTorrentFlux()
-                .subscribe(ignored -> log.debug("DELETED {}", count.incrementAndGet()), ignored -> log.error("failed job", ignored),
+                .subscribe(ignored -> log.info("DELETED {}", count.incrementAndGet()), ignored -> log.error("failed job", ignored),
                         () -> log.info("finished and removed {} torrents", count.get()));
     }
 
