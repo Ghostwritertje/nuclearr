@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -26,6 +27,7 @@ import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -39,6 +41,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 @AutoConfigureWireMock(port = 9999)
 class NuclearrITTest {
 
+    public static final String DOWNLOAD_DIR = "/downloads/nuclearr";
+    public static final String TRACKER = "http://github.cc/announce/sofjsidf";
     @Autowired
     private RemovalJob removalJob;
 
@@ -58,11 +62,11 @@ class NuclearrITTest {
 
     private static Stream<Arguments> testRemovedTorrent_parameterized() {
         return Stream.of(
-                Arguments.of(LocalDateTime.now().minusDays(31), 1, "http://github.cc/announce/sofjsidf", true),
-                Arguments.of(LocalDateTime.now().minusDays(31), 1, "http://github.cc/announce/sofjsidf", true),
-                Arguments.of(LocalDateTime.now().minusDays(29), 1, "http://github.cc/announce/sofjsidf", false),
-                Arguments.of(LocalDateTime.now().minusDays(31), 2, "http://github.cc/announce/sofjsidf", false),
-                Arguments.of(LocalDateTime.now().minusDays(31), 1, "http://amazon.cc/announce/sofjsidf", false)
+                Arguments.of("torrent : older than 30 days | configured tracker | no hardlinks : should be removed", LocalDateTime.now().minusDays(31), 1, "http://github.cc/announce/sofjsidf", true),
+                Arguments.of("torrent : older than 30 days | configured tracker | no hardlinks : should be removed", LocalDateTime.now().minusDays(31), 1, "http://github.cc/announce/sofjsidf", true),
+                Arguments.of("torrent : YOUNGER than 30 days | configured tracker | no hardlinks : should NOT be removed", LocalDateTime.now().minusDays(29), 1, "http://github.cc/announce/sofjsidf", false),
+                Arguments.of("torrent : older than 30 days | configured tracker | 2 hardlinks : should NOT be removed", LocalDateTime.now().minusDays(31), 2, "http://github.cc/announce/sofjsidf", false),
+                Arguments.of("torrent : older than 30 days | UNconfigured tracker | no hardlinks : should NOT be removed", LocalDateTime.now().minusDays(31), 1, "http://amazon.cc/announce/sofjsidf", false)
         );
     }
 
@@ -85,12 +89,12 @@ class NuclearrITTest {
                 .verifyComplete();
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @MethodSource
-    public void testRemovedTorrent_parameterized(LocalDateTime dateAdded, int hardlinks, String tracker, boolean removed) throws JsonProcessingException {
+    public void testRemovedTorrent_parameterized(String name, LocalDateTime dateAdded, int hardlinks, String tracker, boolean removed) throws JsonProcessingException {
         stubFor(WireMock.post("/transmission/rpc").willReturn(ok()
                 .withHeader("Content-Type", "application/json; charset=UTF-8")
-                .withBody(this.createResponse(dateAdded, tracker))));
+                .withBody(this.createResponse(transmissionTorrent(dateAdded, tracker, DOWNLOAD_DIR, "filename.mkv")))));
 
         Mockito.when(this.hardlinkFinder.findHardLinks(Mockito.any()))
                 .thenAnswer(invocationOnMock -> {
@@ -109,23 +113,55 @@ class NuclearrITTest {
                 .verifyComplete();
     }
 
-    private byte[] createResponse(LocalDateTime addedDate, String... trackers) throws JsonProcessingException {
+    @Test
+    @DisplayName("a torrent should not be removed if it has cross-seeds that cannot be removed")
+    public void testCrossSeed() throws JsonProcessingException {
+        TransmissionTorrent torrentThatCanBeRemoved = transmissionTorrent(LocalDateTime.now().minusDays(31), TRACKER, DOWNLOAD_DIR, "filename1.mkv", "filename2.mkv");
+        TransmissionTorrent torrentThatCanNotBeRemoved = transmissionTorrent(LocalDateTime.now().minusDays(31), "http://amazon.cc/announce/sofjsidf", DOWNLOAD_DIR, "filename1.mkv");
+
+        stubFor(WireMock.post("/transmission/rpc").willReturn(ok()
+                .withHeader("Content-Type", "application/json; charset=UTF-8")
+                .withBody(this.createResponse(torrentThatCanBeRemoved, torrentThatCanNotBeRemoved))));
+
+        Mockito.when(this.hardlinkFinder.findHardLinks(Mockito.any()))
+                .thenAnswer(invocationOnMock -> {
+                    FileItem fileItem = (FileItem) invocationOnMock.getArguments()[0];
+                    return Mono.just(fileItem.toBuilder()
+                            .hardlinks(1)
+                            .build());
+                });
+
+
+        StepVerifier.create(removalJob.removeTorrentFlux())
+                .verifyComplete();
+
+        StepVerifier.create(this.removedService.findAll())
+                .expectNextCount(0)
+                .verifyComplete();
+    }
+
+    private byte[] createResponse(TransmissionTorrent... transmissionTorrent) throws JsonProcessingException {
         var transmissionResponse = TransmissionResponse.builder()
                 .arguments(TransmissionResponse.InnerResponse.builder()
-                        .torrents(List.of(TransmissionTorrent.builder()
-                                .id(15)
-                                .downloadDir("/downloads/nuclearr")
-                                .hashString(UUID.randomUUID().toString())
-                                .addedDate(addedDate.atZone(ZoneId.systemDefault()).toEpochSecond())
-                                .name("test-name.mkv")
-                                .trackerList(String.join("\n", trackers))
-                                .files(List.of(TransmissionTorrent.TransmissionFile.builder()
-                                        .name("test-file.mkv")
-                                        .build()))
-                                .build()))
+                        .torrents(List.of(transmissionTorrent))
                         .build())
                 .build();
         return this.objectMapper.writeValueAsBytes(transmissionResponse);
+    }
+
+    private static TransmissionTorrent transmissionTorrent(LocalDateTime addedDate, String tracker, String downloadDir, String... filenames) {
+        return TransmissionTorrent.builder()
+                .id(15)
+                .downloadDir(downloadDir)
+                .hashString(UUID.randomUUID().toString())
+                .addedDate(addedDate.atZone(ZoneId.systemDefault()).toEpochSecond())
+                .name("test-name.mkv")
+                .trackerList(tracker)
+                .files(Arrays.stream(filenames).map(filename -> TransmissionTorrent.TransmissionFile.builder()
+                                .name(filename)
+                                .build())
+                        .toList())
+                .build();
     }
 
 }

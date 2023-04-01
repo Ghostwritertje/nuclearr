@@ -14,10 +14,10 @@ public class HardlinkService {
 
     private final HardlinkFinder hardlinkFinder;
     private final FileItemService fileItemService;
-    private final NuclearrConfiguration nuclearrConfiguration;
 
     public Mono<Void> updateAllHardlinks() {
         return fileItemService.findAll()
+                .doOnRequest(l -> log.info("Checking file usages based on hardlinks"))
                 .flatMap(hardlinkFinder::findHardLinks)
                 .flatMap(fileItemService::save)
                 .then(Mono.fromRunnable(() -> log.info("Finished updating hardlinks")));

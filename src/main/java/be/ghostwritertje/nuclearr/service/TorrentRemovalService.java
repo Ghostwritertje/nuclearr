@@ -56,7 +56,7 @@ public class TorrentRemovalService {
                 ArrayList<String> trackersNotConfigured = new ArrayList<>(Arrays.asList(masterTorrentDto.getTrackers()));
                 trackersNotConfigured.removeAll(nuclearrConfiguration.getTrackers());
                 log.info("Torrent {} cannot be removed because trackers {} are not configured for removal",
-                        StringUtils.truncate(masterTorrentDto.getName(), 15, "..."), String.join(",", trackersNotConfigured));
+                        StringUtils.truncate(masterTorrentDto.getName(), 25, "..."), String.join(",", trackersNotConfigured));
 
             }
 
