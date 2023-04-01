@@ -16,13 +16,10 @@ import be.ghostwritertje.nuclearr.tracker.TrackerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
@@ -37,22 +34,12 @@ public class TorrentImporterService {
     private final FileItemOccurrenceService fileItemOccurrenceService;
     private final InternalTorrentMapper internalTorrentMapper;
 
+    private final TrackerExtractor trackerExtractor;
     private final NuclearrConfiguration nuclearrConfiguration;
 
-    private static Flux<String> extractTrackerList(InternalTorrent internalTorrent) {
-        //todo this mapping should occurr in clientAdapter
-        return Flux.fromStream(Arrays.stream(internalTorrent.getTrackerList().split("\n"))
-                .map(tracker -> {
-                    String result = null;
-                    Matcher matcher = TRACKER_PATTERN.matcher(tracker);
-                    if (matcher.find()) {
-                        result = matcher.group(1);
-                    }
-
-                    return result != null ? result : "ERROR";
-
-                })
-                .filter(StringUtils::hasText));
+    private Flux<String> extractTrackerList(InternalTorrent internalTorrent) {
+        return Flux.fromStream(internalTorrent.getTrackerList().stream())
+                .map(this.trackerExtractor::extract);
     }
 
     public Mono<Void> importTorrents() {

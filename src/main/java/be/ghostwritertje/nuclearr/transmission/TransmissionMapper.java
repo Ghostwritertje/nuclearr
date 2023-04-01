@@ -3,10 +3,12 @@ package be.ghostwritertje.nuclearr.transmission;
 import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrent;
 import be.ghostwritertje.nuclearr.internaltorrent.InternalTorrentFile;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,9 +22,19 @@ public class TransmissionMapper {
                 .files(mapInternalTorrentFiles(transmissionTorrent))
                 .hashString(transmissionTorrent.getHashString())
                 .name(transmissionTorrent.getName())
-                .seedTime(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - transmissionTorrent.getAddedDate())
-                .trackerList(transmissionTorrent.getTrackerList())
+                .seedTime(mapSeedTime(transmissionTorrent))
+                .trackerList(mapTrackers(transmissionTorrent))
                 .build();
+    }
+
+    private List<String> mapTrackers(TransmissionTorrent transmissionTorrent) {
+        return Arrays.stream(transmissionTorrent.getTrackerList().split("\n"))
+                .filter(StringUtils::hasText)
+                .toList();
+    }
+
+    private long mapSeedTime(TransmissionTorrent transmissionTorrent) {
+        return LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond() - transmissionTorrent.getAddedDate();
     }
 
     private List<InternalTorrentFile> mapInternalTorrentFiles(TransmissionTorrent transmissionTorrent) {
