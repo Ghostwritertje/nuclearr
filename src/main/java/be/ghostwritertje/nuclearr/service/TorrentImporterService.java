@@ -16,20 +16,13 @@ import be.ghostwritertje.nuclearr.tracker.TrackerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TorrentImporterService {
-    public static final Pattern TRACKER_PATTERN = Pattern.compile("//([^/]+)(:\\d+)?/");
     private final TorrentClientAdapter torrentClientAdapter;
     private final TorrentService torrentService;
     private final TrackerService trackerService;
@@ -37,37 +30,25 @@ public class TorrentImporterService {
     private final FileItemOccurrenceService fileItemOccurrenceService;
     private final InternalTorrentMapper internalTorrentMapper;
 
+    private final TrackerExtractor trackerExtractor;
     private final NuclearrConfiguration nuclearrConfiguration;
-
-    private static Flux<String> extractTrackerList(InternalTorrent internalTorrent) {
-        //todo this mapping should occurr in clientAdapter
-        return Flux.fromStream(Arrays.stream(internalTorrent.getTrackerList().split("\n"))
-                .map(tracker -> {
-                    String result = null;
-                    Matcher matcher = TRACKER_PATTERN.matcher(tracker);
-                    if (matcher.find()) {
-                        result = matcher.group(1);
-                    }
-
-                    return result != null ? result : "ERROR";
-
-                })
-                .filter(StringUtils::hasText));
-    }
 
     public Mono<Void> importTorrents() {
         log.info("Importing torrents");
-        ConnectableFlux<InternalTorrent> internalTorrentFlux = torrentClientAdapter.getTorrents()
-                .publish();
+        Flux<InternalTorrent> internalTorrentFlux = torrentClientAdapter.getTorrents()
+                .publish()
+                .autoConnect(4);
 
-        ConnectableFlux<Torrent> torrentFlux = internalTorrentFlux
+        Flux<Torrent> torrentFlux = internalTorrentFlux
                 .map(internalTorrentMapper::mapInternalTorrent)
                 .buffer(nuclearrConfiguration.getBatchSize())
                 .flatMap(torrentService::saveAll)
-                .publish();
+                .publish()
+                .autoConnect(2);
 
 
         Flux<FileItem> fileItemFlux = internalTorrentFlux.flatMap(internalTorrent -> Flux.fromIterable(internalTorrent.getFiles()))
+                .log()
                 .map(InternalTorrentFile::getName)
                 .map(s -> FileItem.builder().path(s).build())
                 .distinct(FileItem::getPath)
@@ -84,12 +65,14 @@ public class TorrentImporterService {
                 .flatMap(fileItemOccurrenceService::saveAll);
 
         Flux<Tracker> trackerFlux = Flux.zip(internalTorrentFlux.onBackpressureBuffer(), torrentFlux.onBackpressureBuffer())
-                .flatMap(tuple -> extractTrackerList(tuple.getT1()).map(tracker -> internalTorrentMapper.mapTracker(tuple.getT2(), tracker)))
+                .flatMap(tuple -> {
+                    InternalTorrent internalTorrent = tuple.getT1();
+                    return Flux.fromStream(internalTorrent.getTrackerList().stream())
+                            .map(this.trackerExtractor::extract).map(tracker -> internalTorrentMapper.mapTracker(tuple.getT2(), tracker));
+                })
                 .buffer(nuclearrConfiguration.getBatchSize())
                 .flatMap(trackerService::saveAll);
 
-        internalTorrentFlux.connect();
-        torrentFlux.connect();
 
         return Flux.merge(fileItemFlux.then(), fileItemOccurrenceFlux.then(), trackerFlux.then())
                 .then(Mono.fromRunnable(() -> log.info("finished importing everything")));

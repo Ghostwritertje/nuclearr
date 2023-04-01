@@ -69,7 +69,7 @@ public class TorrentRemovalService {
     }
 
     private Mono<Removed> createRemovedItem(Integer id, Representation representation) {
-        return removedService.findRemovedByTransmissionId(id)
+        return removedService.findRemovedByTransmissionId(id) //todo should not use id
                 .switchIfEmpty(removedService.save(Removed.builder()
                         .name(representation.getName())
                         .seedTime(representation.getSeedTime())

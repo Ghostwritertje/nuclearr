@@ -15,6 +15,6 @@ public class InternalTorrent {
     private String name;
 
     private Long seedTime;
-    private String trackerList;
+    private List<String> trackerList;
 
 }

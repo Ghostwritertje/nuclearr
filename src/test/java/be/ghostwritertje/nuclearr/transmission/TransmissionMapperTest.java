@@ -8,11 +8,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TransmissionMapperTest {
 
     private final TransmissionMapper mapper = new TransmissionMapper();
+
     @Test
     void mapInternalTorrent_filename() {
 
@@ -37,12 +38,14 @@ class TransmissionMapperTest {
 
         assertEquals("/downloads/filename.jpg", result.getFiles().get(0).getName());
     }
+
     @Test
     void mapInternalTorrent_seedTime() {
 
         TransmissionTorrent transmissionTorrent = TransmissionTorrent.builder()
-                .addedDate(LocalDateTime.now().minusDays(15).atZone(ZoneId.systemDefault()).toEpochSecond())
+                .addedDate(LocalDateTime.now().atZone(ZoneId.systemDefault()).minusSeconds(Duration.ofDays(15).toSeconds()).toEpochSecond())
                 .files(List.of())
+                .trackerList("http://github.com")
                 .build();
 
 
@@ -50,6 +53,7 @@ class TransmissionMapperTest {
 
         assertEquals(Duration.ofDays(15).toSeconds(), result.getSeedTime());
     }
+
     @Test
     void mapInternalTorrent() {
         TransmissionTorrent.TransmissionFile file = TransmissionTorrent.TransmissionFile.builder()
@@ -65,7 +69,7 @@ class TransmissionMapperTest {
                 .hashString("hash")
                 .addedDate(1790L)
                 .name("name")
-                .trackerList("google.com")
+                .trackerList("google.com\n\ngithub.com")
                 .build();
 
 
@@ -74,6 +78,6 @@ class TransmissionMapperTest {
         assertEquals("/downloads", result.getDownloadDir());
         assertEquals("hash", result.getHashString());
         assertEquals("name", result.getName());
-        assertEquals("google.com", result.getTrackerList());
+        assertEquals(List.of("google.com", "github.com"), result.getTrackerList());
     }
 }

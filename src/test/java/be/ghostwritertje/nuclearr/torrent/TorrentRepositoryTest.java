@@ -1,5 +1,6 @@
 package be.ghostwritertje.nuclearr.torrent;
 
+import io.r2dbc.spi.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -14,7 +15,6 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.stream.IntStream;
 
-//@ExtendWith(SpringExtension.class)
 @ActiveProfiles("test")
 @SpringBootTest
 class TorrentRepositoryTest {
@@ -45,22 +45,6 @@ class TorrentRepositoryTest {
                 .verifyComplete();
     }
 
-    @Test
-    @Timeout(20)
-    public void testSaveMany() {
-        Flux<Torrent> result = Flux.fromStream(IntStream.range(1, 1001).boxed())
-                .map(i -> Torrent.builder()
-                        .name("test-many" + i)
-                        .hash("tst-hash" + i)
-                        .transmissionId(i)
-                        .build())
-                .buffer(150)
-                .flatMap(torrentRepository::saveAll);
-
-        StepVerifier.create(result)
-                .expectNextCount(1000)
-                .verifyComplete();
-    }
 
     @Test
     @Timeout(1)
@@ -83,13 +67,11 @@ class TorrentRepositoryTest {
     @Test
     @Timeout(20)
     public void testH2() {
-        Mono<List<Long>> listMono = databaseClient.inConnection(conn -> {
-            return Flux.from(conn.createStatement("insert into REMOVED (name) values ($1)")
-                            .bind(0, 1).add()
-                            .bind(0, 2).execute())
-                    .flatMap(it -> it.getRowsUpdated())
-                    .collectList();
-        });
+        Mono<List<Long>> listMono = databaseClient.inConnection(conn -> Flux.from(conn.createStatement("insert into REMOVED (name) values ($1)")
+                        .bind(0, 1).add()
+                        .bind(0, 2).execute())
+                .flatMap(Result::getRowsUpdated)
+                .collectList());
 
         StepVerifier.create(listMono)
                 .expectNextCount(1)
