@@ -43,8 +43,9 @@ class TransmissionMapperTest {
     void mapInternalTorrent_seedTime() {
 
         TransmissionTorrent transmissionTorrent = TransmissionTorrent.builder()
-                .addedDate(LocalDateTime.now().minusDays(15).atZone(ZoneId.systemDefault()).toEpochSecond())
+                .addedDate(LocalDateTime.now().atZone(ZoneId.systemDefault()).minusSeconds(Duration.ofDays(15).toSeconds()).toEpochSecond())
                 .files(List.of())
+                .trackerList("http://github.com")
                 .build();
 
 

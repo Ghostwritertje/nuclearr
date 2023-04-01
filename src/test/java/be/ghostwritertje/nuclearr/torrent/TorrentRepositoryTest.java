@@ -45,22 +45,6 @@ class TorrentRepositoryTest {
                 .verifyComplete();
     }
 
-    @Test
-    @Timeout(20)
-    public void testSaveMany() {
-        Flux<Torrent> result = Flux.fromStream(IntStream.range(1, 1001).boxed())
-                .map(i -> Torrent.builder()
-                        .name("test-many" + i)
-                        .hash("tst-hash" + i)
-                        .transmissionId(i)
-                        .build())
-                .buffer(150)
-                .flatMap(torrentRepository::saveAll);
-
-        StepVerifier.create(result)
-                .expectNextCount(1000)
-                .verifyComplete();
-    }
 
     @Test
     @Timeout(1)

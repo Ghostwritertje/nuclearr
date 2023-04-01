@@ -1,15 +1,19 @@
 package be.ghostwritertje.nuclearr.transmission;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransmissionResponse {
     private InnerResponse arguments;
 
-    public TransmissionResponse() {
-    }
 
     public InnerResponse getArguments() {
         return arguments;
@@ -21,11 +25,11 @@ public class TransmissionResponse {
 
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class InnerResponse {
         private List<TransmissionTorrent> torrents;
-
-        public InnerResponse() {
-        }
 
         public List<TransmissionTorrent> getTorrents() {
             return torrents;

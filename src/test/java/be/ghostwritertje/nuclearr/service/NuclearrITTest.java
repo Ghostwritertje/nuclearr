@@ -5,9 +5,16 @@ import be.ghostwritertje.nuclearr.hardlinks.HardlinkFinder;
 import be.ghostwritertje.nuclearr.internaltorrent.TorrentClientAdapter;
 import be.ghostwritertje.nuclearr.removed.RemovedService;
 import be.ghostwritertje.nuclearr.torrent.TorrentService;
+import be.ghostwritertje.nuclearr.transmission.TransmissionResponse;
+import be.ghostwritertje.nuclearr.transmission.TransmissionTorrent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +26,9 @@ import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -43,6 +53,19 @@ class NuclearrITTest {
     @Autowired
     private TorrentService torrentService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private static Stream<Arguments> testRemovedTorrent_parameterized() {
+        return Stream.of(
+                Arguments.of(LocalDateTime.now().minusDays(31), 1, "http://github.cc/announce/sofjsidf", true),
+                Arguments.of(LocalDateTime.now().minusDays(31), 1, "http://github.cc/announce/sofjsidf", true),
+                Arguments.of(LocalDateTime.now().minusDays(29), 1, "http://github.cc/announce/sofjsidf", false),
+                Arguments.of(LocalDateTime.now().minusDays(31), 2, "http://github.cc/announce/sofjsidf", false),
+                Arguments.of(LocalDateTime.now().minusDays(31), 1, "http://amazon.cc/announce/sofjsidf", false)
+        );
+    }
+
     @BeforeEach
     public void setup() {
         StepVerifier.create(this.torrentService.deleteAll())
@@ -62,40 +85,18 @@ class NuclearrITTest {
                 .verifyComplete();
     }
 
-    @Test
-    public void testRemovedTorrent() {
+    @ParameterizedTest
+    @MethodSource
+    public void testRemovedTorrent_parameterized(LocalDateTime dateAdded, int hardlinks, String tracker, boolean removed) throws JsonProcessingException {
         stubFor(WireMock.post("/transmission/rpc").willReturn(ok()
                 .withHeader("Content-Type", "application/json; charset=UTF-8")
-                .withBody("{\n" +
-                        "  \"arguments\": {\n" +
-                        "    \"torrents\": [\n" +
-                        "      {\n" +
-                        "        \"activityDate\": 1678989177,\n" +
-                        "        \"addedDate\": 1658986238,\n" +
-                        "        \"files\": [\n" +
-                        "          {\n" +
-                        "            \"bytesCompleted\": 2679554722,\n" +
-                        "            \"length\": 2679554722,\n" +
-                        "            \"name\": \"True.Lies.S01E03.Separate.Pairs.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTb.mkv\"\n" +
-                        "          }\n" +
-                        "        ],\n" +
-                        "        \"id\": 567,\n" +
-                        "        \"downloadDir\": \"/downloads/sonarr\",\n" +
-                        "        \"hashString\": \"000ab75485580a2e6728a9a37ec40c01307c21e0\",\n" +
-                        "        \"name\": \"True.Lies.S01E03.Separate.Pairs.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTb.mkv\",\n" +
-                        "        \"secondsSeeding\": 236354,\n" +
-                        "        \"startDate\": 1680110055,\n" +
-                        "        \"trackerList\": \"https://github.cc/announce/123THISISATEST\\n\"\n" +
-                        "      }\n" +
-                        "    ]\n" +
-                        "  }\n" +
-                        "}")));
+                .withBody(this.createResponse(dateAdded, tracker))));
 
         Mockito.when(this.hardlinkFinder.findHardLinks(Mockito.any()))
                 .thenAnswer(invocationOnMock -> {
                     FileItem fileItem = (FileItem) invocationOnMock.getArguments()[0];
                     return Mono.just(fileItem.toBuilder()
-                            .hardlinks(1)
+                            .hardlinks(hardlinks)
                             .build());
                 });
 
@@ -104,8 +105,27 @@ class NuclearrITTest {
                 .verifyComplete();
 
         StepVerifier.create(this.removedService.findAll())
-                .expectNextCount(1L)
+                .expectNextCount(removed ? 1 : 0)
                 .verifyComplete();
+    }
+
+    private byte[] createResponse(LocalDateTime addedDate, String... trackers) throws JsonProcessingException {
+        var transmissionResponse = TransmissionResponse.builder()
+                .arguments(TransmissionResponse.InnerResponse.builder()
+                        .torrents(List.of(TransmissionTorrent.builder()
+                                .id(15)
+                                .downloadDir("/downloads/nuclearr")
+                                .hashString(UUID.randomUUID().toString())
+                                .addedDate(addedDate.atZone(ZoneId.systemDefault()).toEpochSecond())
+                                .name("test-name.mkv")
+                                .trackerList(String.join("\n", trackers))
+                                .files(List.of(TransmissionTorrent.TransmissionFile.builder()
+                                        .name("test-file.mkv")
+                                        .build()))
+                                .build()))
+                        .build())
+                .build();
+        return this.objectMapper.writeValueAsBytes(transmissionResponse);
     }
 
 }
