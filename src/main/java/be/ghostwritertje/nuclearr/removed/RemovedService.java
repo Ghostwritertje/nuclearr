@@ -23,4 +23,12 @@ public class RemovedService {
     public Mono<Removed> save(Removed removed) {
         return this.repo.save(removed);
     }
+
+    public Flux<Removed> findAll() {
+        return this.repo.findAll();
+    }
+
+    public Mono<Void> deleteAll() {
+        return this.repo.deleteAll();
+    }
 }
